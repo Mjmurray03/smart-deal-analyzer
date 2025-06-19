@@ -1,0 +1,34 @@
+# Smart Deal Analyzer Rules
+
+## Project Context
+You are building a commercial real estate investment analyzer for a finance student with no coding background. Keep code simple and well-commented.
+
+## Tech Stack
+- Next.js 14 with App Router
+- TypeScript (use simple types)
+- Tailwind CSS for styling
+- Client-side only (no backend/database)
+
+## Code Style
+- Use descriptive variable names
+- Add comments explaining complex logic
+- Keep functions small and focused
+- Use consistent formatting
+- Prefer readability over cleverness
+
+## File Naming
+- Components: PascalCase (MetricsDisplay.tsx)
+- Utilities: camelCase (calculations.ts)
+- Types: PascalCase for interfaces
+
+## Important Patterns
+- All calculations should handle missing/disabled inputs gracefully
+- Return null or "N/A" for disabled metrics
+- Use React state for form management
+- Keep all logic client-side
+
+## Before Making Changes
+1. Read smart-deal-analyzer.md
+2. Check existing code patterns
+3. Test changes locally
+4. Update documentation if needed
