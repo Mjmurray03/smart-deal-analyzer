@@ -1,3 +1,4 @@
+'use client';
 import { PropertyData, MetricFlags, CalculatedMetrics, DealAssessment } from '@/lib/calculations/types';
 import { DocumentArrowDownIcon } from '@heroicons/react/24/outline';
 

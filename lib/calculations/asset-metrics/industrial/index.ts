@@ -1,7 +1,7 @@
 // lib/calculations/asset-metrics/industrial/index.ts
 // Comprehensive industrial property analytics for institutional investors
 
-import { PropertyData } from '../../types';
+// Types are defined locally to avoid unused imports
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -1050,8 +1050,10 @@ uniqueAdvantages
 
 // ==================== HELPER FUNCTIONS ====================
 
-function getPropertyTypeRequirements(propertyType: string): any {
-const requirements: Record<string, any> = {
+interface PropertyRequirements { minClearHeight: number; idealClearHeight: number; minDockRatio: number; idealDockRatio: number; minColumnSpacing: number; idealColumnSpacing: number; minTruckTurning: number; idealTruckTurning: number; minTrailerStorageDepth: number; idealTrailerStorageDepth: number; minOfficeRatio: number; idealOfficeRatio: number; }
+
+function getPropertyTypeRequirements(propertyType: string): PropertyRequirements | null {
+const requirements: Record<string, PropertyRequirements> = {
 'Warehouse': {
 minClearHeight: 24,
 idealClearHeight: 32,

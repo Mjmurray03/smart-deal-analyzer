@@ -1,6 +1,177 @@
 import { MetricFlags, PropertyData, CalculationPackage } from './types';
 import { getAssetCalculationFunctions, validateAssetDataRequirements } from './asset-metrics';
+// Import enhanced packages
+import { enhancedOfficePackages } from './packages/office-packages-enhanced';
+import { enhancedRetailPackages } from './packages/retail-packages-enhanced';
+import { enhancedIndustrialPackages } from './packages/industrial-packages-enhanced';
+import { enhancedMultifamilyPackages } from './packages/multifamily-packages-enhanced';
+import { enhancedMixedUsePackages } from './packages/mixed-use-packages-enhanced';
 
+// Quick packages for back-of-envelope calculations
+export const quickPackages: Record<string, CalculationPackage[]> = {
+  office: [
+    {
+      id: 'office-quick-valuation',
+      name: 'Quick Property Valuation',
+      description: 'Basic valuation metrics for office properties',
+      includedMetrics: ['capRate', 'pricePerSF', 'grm'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'totalSF'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'office-quick-returns',
+      name: 'Quick Return Analysis',
+      description: 'Essential return metrics for office investments',
+      includedMetrics: ['capRate', 'cashOnCash', 'roi'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'totalInvestment', 'annualCashFlow'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'office-quick-lease',
+      name: 'Quick Lease Analysis',
+      description: 'Lease-focused analysis for office properties',
+      includedMetrics: ['effectiveRentPSF'] as (keyof MetricFlags)[],
+      requiredFields: ['averageRentPSF', 'operatingExpenses'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'office-quick-financing',
+      name: 'Quick Financing Check',
+      description: 'Financing feasibility for office properties',
+      includedMetrics: ['ltv', 'dscr'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'loanAmount', 'interestRate', 'loanTerm', 'currentNOI'] as (keyof PropertyData)[]
+    }
+  ],
+  retail: [
+    {
+      id: 'retail-quick-valuation',
+      name: 'Quick Center Valuation',
+      description: 'Basic valuation metrics for retail properties',
+      includedMetrics: ['capRate', 'pricePerSF'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'grossLeasableArea'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'retail-quick-sales',
+      name: 'Quick Sales Analysis',
+      description: 'Sales performance analysis for retail tenants',
+      includedMetrics: ['salesPerSF'] as (keyof MetricFlags)[],
+      requiredFields: ['retailTenants', 'grossLeasableArea'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'retail-quick-tenant',
+      name: 'Quick Tenant Health',
+      description: 'Tenant occupancy and performance analysis',
+      includedMetrics: ['salesPerSF'] as (keyof MetricFlags)[],
+      requiredFields: ['averageRent', 'retailTenants', 'grossLeasableArea'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'retail-quick-income',
+      name: 'Quick Income Analysis',
+      description: 'Income and recovery analysis for retail properties',
+      includedMetrics: ['capRate'] as (keyof MetricFlags)[],
+      requiredFields: ['grossIncome', 'operatingExpenses', 'occupancyRate'] as (keyof PropertyData)[]
+    }
+  ],
+  industrial: [
+    {
+      id: 'industrial-quick-valuation',
+      name: 'Quick Warehouse Valuation',
+      description: 'Basic valuation metrics for industrial properties',
+      includedMetrics: ['capRate', 'pricePerSF'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'squareFootage'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'industrial-quick-efficiency',
+      name: 'Quick Building Efficiency',
+      description: 'Building efficiency and functionality analysis',
+      includedMetrics: ['industrialMetrics'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'squareFootage', 'clearHeight', 'numberOfDockDoors'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'industrial-quick-rent',
+      name: 'Quick Rent Analysis',
+      description: 'Effective rent analysis for industrial properties',
+      includedMetrics: ['effectiveRentPSF'] as (keyof MetricFlags)[],
+      requiredFields: ['averageRentPSF', 'operatingExpenses'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'industrial-quick-operations',
+      name: 'Quick Operating Analysis',
+      description: 'Operating performance analysis for industrial properties',
+      includedMetrics: ['capRate'] as (keyof MetricFlags)[],
+      requiredFields: ['grossIncome', 'operatingExpenses', 'purchasePrice'] as (keyof PropertyData)[]
+    }
+  ],
+  multifamily: [
+    {
+      id: 'multifamily-quick-valuation',
+      name: 'Quick Property Valuation',
+      description: 'Basic valuation metrics for multifamily properties',
+      includedMetrics: ['pricePerUnit', 'grm', 'capRate'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'numberOfUnits', 'averageRent', 'occupancyRate'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'multifamily-quick-income',
+      name: 'Quick Income Analysis',
+      description: 'Income performance analysis for multifamily properties',
+      includedMetrics: ['egi'] as (keyof MetricFlags)[],
+      requiredFields: ['numberOfUnits', 'averageRent', 'occupancyRate', 'operatingExpenses'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'multifamily-quick-unit',
+      name: 'Quick Per-Unit Metrics',
+      description: 'Per-unit performance analysis for multifamily properties',
+      includedMetrics: ['pricePerUnit', 'revenuePerUnit'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'numberOfUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'multifamily-quick-returns',
+      name: 'Quick Return Metrics',
+      description: 'Return analysis for multifamily properties',
+      includedMetrics: ['cashOnCash', 'capRate', 'roi'] as (keyof MetricFlags)[],
+      requiredFields: ['totalInvestment', 'annualCashFlow', 'purchasePrice', 'currentNOI'] as (keyof PropertyData)[]
+    }
+  ],
+  'mixed-use': [
+    {
+      id: 'mixeduse-quick-valuation',
+      name: 'Quick Mixed-Use Valuation',
+      description: 'Basic valuation metrics for mixed-use properties',
+      includedMetrics: ['capRate', 'pricePerSF'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'totalSF'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'mixeduse-quick-allocation',
+      name: 'Quick Component Analysis',
+      description: 'Component allocation and performance analysis',
+      includedMetrics: ['capRate'] as (keyof MetricFlags)[],
+      requiredFields: ['currentNOI', 'purchasePrice'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'mixeduse-quick-efficiency',
+      name: 'Quick Efficiency Metrics',
+      description: 'Operating efficiency analysis for mixed-use properties',
+      includedMetrics: ['capRate'] as (keyof MetricFlags)[],
+      requiredFields: ['grossIncome', 'operatingExpenses', 'purchasePrice'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'mixeduse-quick-returns',
+      name: 'Quick Investment Returns',
+      description: 'Return analysis for mixed-use properties',
+      includedMetrics: ['capRate', 'cashOnCash'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'totalInvestment', 'annualCashFlow'] as (keyof PropertyData)[]
+    }
+  ]
+};
+
+
+// Advanced packages for comprehensive institutional analysis - ENHANCED 28 PACKAGES
+export const advancedPackages: Record<string, CalculationPackage[]> = {
+  office: enhancedOfficePackages,
+  retail: enhancedRetailPackages,
+  industrial: enhancedIndustrialPackages,
+  multifamily: enhancedMultifamilyPackages,
+  'mixed-use': enhancedMixedUsePackages
+};
+
+// Legacy packages for backward compatibility
 export const propertyPackages: Record<string, CalculationPackage[]> = {
   office: [
     {
@@ -13,21 +184,28 @@ export const propertyPackages: Record<string, CalculationPackage[]> = {
     {
       id: 'office-complete',
       name: 'Complete Office Analysis',
-      description: 'Full analysis for office properties',
-      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'breakeven'] as (keyof MetricFlags)[],
+      description: 'Full analysis for office properties with WALT calculation',
+      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'breakeven', 'simpleWalt'] as (keyof MetricFlags)[],
       requiredFields: ['purchasePrice', 'currentNOI', 'projectedNOI', 'totalInvestment', 
                       'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm', 
-                      'operatingExpenses', 'grossIncome'] as (keyof PropertyData)[]
+                      'operatingExpenses', 'grossIncome', 'officeTenants'] as (keyof PropertyData)[]
     },
     {
       id: 'office-institutional',
       name: 'Institutional Office Analysis',
       description: 'Comprehensive institutional-grade office analysis with tenant and lease analytics',
-      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'roi', 'breakeven', 'pricePerSF'] as (keyof MetricFlags)[],
+      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'roi', 'breakeven', 'pricePerSF', 'walt', 'simpleWalt'] as (keyof MetricFlags)[],
       requiredFields: ['purchasePrice', 'currentNOI', 'projectedNOI', 'totalInvestment', 
                       'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm', 
                       'operatingExpenses', 'grossIncome', 'rentableSquareFeet', 'numberOfTenants', 
-                      'averageRentPSF', 'weightedAverageLeaseTerm'] as (keyof PropertyData)[]
+                      'averageRentPSF', 'weightedAverageLeaseTerm', 'officeTenants'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'office-wow',
+      name: 'Office WALT Analysis',
+      description: 'Quick WALT calculation with tenant input form for office properties',
+      includedMetrics: ['capRate', 'walt'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'officeTenants'] as (keyof PropertyData)[]
     }
   ],
   retail: [
@@ -41,21 +219,28 @@ export const propertyPackages: Record<string, CalculationPackage[]> = {
     {
       id: 'retail-complete',
       name: 'Complete Retail Analysis',
-      description: 'Full analysis for retail properties',
-      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'breakeven'] as (keyof MetricFlags)[],
+      description: 'Full analysis for retail properties with sales performance',
+      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'breakeven', 'salesPerSF'] as (keyof MetricFlags)[],
       requiredFields: ['purchasePrice', 'currentNOI', 'projectedNOI', 'totalInvestment', 
                       'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm', 
-                      'operatingExpenses', 'grossIncome'] as (keyof PropertyData)[]
+                      'operatingExpenses', 'grossIncome', 'retailTenants'] as (keyof PropertyData)[]
     },
     {
       id: 'retail-institutional',
       name: 'Institutional Retail Analysis',
       description: 'Comprehensive retail analysis with sales performance and trade area analytics',
-      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'roi', 'breakeven', 'pricePerSF'] as (keyof MetricFlags)[],
+      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'roi', 'breakeven', 'pricePerSF', 'salesPerSF'] as (keyof MetricFlags)[],
       requiredFields: ['purchasePrice', 'currentNOI', 'projectedNOI', 'totalInvestment', 
                       'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm', 
                       'operatingExpenses', 'grossIncome', 'grossLeasableArea', 'salesPerSF', 
-                      'occupancyCostRatio', 'trafficCount'] as (keyof PropertyData)[]
+                      'occupancyCostRatio', 'trafficCount', 'retailTenants'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'retail-wow',
+      name: 'Retail Sales Analysis',
+      description: 'Sales per square foot analysis for retail properties',
+      includedMetrics: ['capRate', 'salesPerSF'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'retailTenants'] as (keyof PropertyData)[]
     }
   ],
   industrial: [
@@ -69,20 +254,27 @@ export const propertyPackages: Record<string, CalculationPackage[]> = {
     {
       id: 'industrial-investment',
       name: 'Investment Analysis',
-      description: 'Returns and financing metrics',
-      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'roi'] as (keyof MetricFlags)[],
+      description: 'Returns and financing metrics with clear height analysis',
+      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'roi', 'industrialMetrics'] as (keyof MetricFlags)[],
       requiredFields: ['purchasePrice', 'currentNOI', 'projectedNOI', 'totalInvestment',
-                      'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm'] as (keyof PropertyData)[]
+                      'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm', 'clearHeight'] as (keyof PropertyData)[]
     },
     {
       id: 'industrial-institutional',
       name: 'Institutional Industrial Analysis',
       description: 'Comprehensive industrial analysis with building functionality and logistics analytics',
-      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'roi', 'breakeven', 'pricePerSF'] as (keyof MetricFlags)[],
+      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'roi', 'breakeven', 'pricePerSF', 'industrialMetrics'] as (keyof MetricFlags)[],
       requiredFields: ['purchasePrice', 'currentNOI', 'projectedNOI', 'totalInvestment', 
                       'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm', 
                       'operatingExpenses', 'grossIncome', 'clearHeight', 'numberOfDockDoors', 
-                      'powerCapacity', 'distanceToHighway'] as (keyof PropertyData)[]
+                      'powerCapacity', 'distanceToHighway', 'squareFootage'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'industrial-wow',
+      name: 'Industrial Clear Height Analysis',
+      description: 'Clear height premium analysis for industrial properties',
+      includedMetrics: ['capRate', 'clearHeightAnalysis'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'squareFootage', 'clearHeight'] as (keyof PropertyData)[]
     }
   ],
   multifamily: [
@@ -96,21 +288,28 @@ export const propertyPackages: Record<string, CalculationPackage[]> = {
     {
       id: 'multifamily-complete',
       name: 'Complete Multifamily Analysis',
-      description: 'Full analysis for multifamily properties',
-      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'breakeven'] as (keyof MetricFlags)[],
+      description: 'Full analysis for multifamily properties with revenue analytics',
+      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'breakeven', 'multifamilyMetrics'] as (keyof MetricFlags)[],
       requiredFields: ['purchasePrice', 'currentNOI', 'projectedNOI', 'totalInvestment', 
                       'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm', 
-                      'operatingExpenses', 'grossIncome'] as (keyof PropertyData)[]
+                      'operatingExpenses', 'grossIncome', 'numberOfUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[]
     },
     {
       id: 'multifamily-institutional',
       name: 'Institutional Multifamily Analysis',
       description: 'Comprehensive multifamily analysis with revenue performance and market analytics',
-      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'roi', 'breakeven', 'pricePerUnit', 'grm', 'egi'] as (keyof MetricFlags)[],
+      includedMetrics: ['capRate', 'cashOnCash', 'dscr', 'irr', 'roi', 'breakeven', 'pricePerUnit', 'grm', 'egi', 'multifamilyMetrics'] as (keyof MetricFlags)[],
       requiredFields: ['purchasePrice', 'currentNOI', 'projectedNOI', 'totalInvestment', 
                       'annualCashFlow', 'loanAmount', 'interestRate', 'loanTerm', 
                       'operatingExpenses', 'grossIncome', 'numberOfUnits', 'currentOccupancy', 
-                      'averageRentPerUnit', 'unitMix'] as (keyof PropertyData)[]
+                      'averageRentPerUnit', 'unitMix', 'monthlyRentalIncome'] as (keyof PropertyData)[]
+    },
+    {
+      id: 'multifamily-wow',
+      name: 'Multifamily Revenue Analysis',
+      description: 'Revenue per unit analysis with market comparison for multifamily properties',
+      includedMetrics: ['capRate', 'revenuePerUnit'] as (keyof MetricFlags)[],
+      requiredFields: ['purchasePrice', 'currentNOI', 'totalUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[]
     }
   ],
   'mixed-use': [
@@ -200,6 +399,295 @@ export const allMetrics = {
     requiredFields: ['purchasePrice', 'squareFootage'] as (keyof PropertyData)[]
   },
   
+  // New "Wow" Metrics
+  walt: {
+    name: "WALT",
+    category: "Office",
+    description: "Weighted Average Lease Term calculation for office tenants",
+    requiredFields: ['purchasePrice', 'currentNOI', 'officeTenants'] as (keyof PropertyData)[]
+  },
+  simpleWalt: {
+    name: "Simple WALT",
+    category: "Office",
+    description: "Weighted Average Lease Term calculation for office tenants",
+    requiredFields: ['officeTenants'] as (keyof PropertyData)[]
+  },
+  salesPerSF: {
+    name: "Sales per Square Foot",
+    category: "Retail",
+    description: "Sales performance analysis for retail tenants",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  clearHeightAnalysis: {
+    name: "Clear Height Analysis",
+    category: "Industrial",
+    description: "Clear height premium analysis for industrial properties",
+    requiredFields: ['squareFootage', 'clearHeight', 'purchasePrice'] as (keyof PropertyData)[]
+  },
+  revenuePerUnit: {
+    name: "Revenue per Unit",
+    category: "Multifamily",
+    description: "Revenue per unit analysis with market comparison",
+    requiredFields: ['totalUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[],
+    optionalFields: ['marketAverageRent'] as (keyof PropertyData)[]
+  },
+  industrialMetrics: {
+    name: "Industrial Clear Height Analysis",
+    category: "Industrial",
+    description: "Clear height premium analysis for industrial properties",
+    requiredFields: ['squareFootage', 'clearHeight', 'purchasePrice'] as (keyof PropertyData)[]
+  },
+  multifamilyMetrics: {
+    name: "Multifamily Revenue Analysis",
+    category: "Multifamily",
+    description: "Revenue per unit analysis with market comparison",
+    requiredFields: ['numberOfUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[]
+  },
+  
+  // Advanced Office Metrics
+  tenantFinancialHealth: {
+    name: "Tenant Financial Health",
+    category: "Office",
+    description: "Comprehensive tenant creditworthiness and financial analysis",
+    requiredFields: ['officeTenants'] as (keyof PropertyData)[]
+  },
+  tenantConcentration: {
+    name: "Tenant Concentration",
+    category: "Office",
+    description: "Tenant concentration risk analysis",
+    requiredFields: ['officeTenants'] as (keyof PropertyData)[]
+  },
+  leaseValuation: {
+    name: "Lease Valuation",
+    category: "Office",
+    description: "Advanced lease economics and valuation analysis",
+    requiredFields: ['officeTenants'] as (keyof PropertyData)[]
+  },
+  escalationAnalysis: {
+    name: "Escalation Analysis",
+    category: "Office",
+    description: "Rent escalation and CPI exposure analysis",
+    requiredFields: ['officeTenants'] as (keyof PropertyData)[]
+  },
+  concessionAnalysis: {
+    name: "Concession Analysis",
+    category: "Office",
+    description: "Tenant concession and inducement analysis",
+    requiredFields: ['officeTenants'] as (keyof PropertyData)[]
+  },
+  operationalEfficiency: {
+    name: "Operational Efficiency",
+    category: "Office",
+    description: "Building operations and efficiency analysis",
+    requiredFields: ['rentableSquareFeet'] as (keyof PropertyData)[]
+  },
+  marketPositioning: {
+    name: "Market Positioning",
+    category: "Office",
+    description: "Competitive market positioning analysis",
+    requiredFields: ['rentableSquareFeet'] as (keyof PropertyData)[]
+  },
+  spaceEfficiency: {
+    name: "Space Efficiency",
+    category: "Office",
+    description: "Space utilization and efficiency metrics",
+    requiredFields: ['rentableSquareFeet'] as (keyof PropertyData)[]
+  },
+  
+  // Advanced Retail Metrics
+  tenantHealth: {
+    name: "Tenant Health",
+    category: "Retail",
+    description: "Retail tenant health and performance analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  categoryPerformance: {
+    name: "Category Performance",
+    category: "Retail",
+    description: "Retail category performance analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  seasonalAnalysis: {
+    name: "Seasonal Analysis",
+    category: "Retail",
+    description: "Seasonal sales pattern analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  tenantSynergies: {
+    name: "Tenant Synergies",
+    category: "Retail",
+    description: "Tenant synergy and cross-shopping analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  criticalMass: {
+    name: "Critical Mass",
+    category: "Retail",
+    description: "Critical mass and occupancy analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  tradeAreaAnalysis: {
+    name: "Trade Area Analysis",
+    category: "Retail",
+    description: "Trade area demographics and market analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  competitivePosition: {
+    name: "Competitive Position",
+    category: "Retail",
+    description: "Competitive positioning and market share analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  voidAnalysis: {
+    name: "Void Analysis",
+    category: "Retail",
+    description: "Market void and opportunity analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  growthPotential: {
+    name: "Growth Potential",
+    category: "Retail",
+    description: "Market growth potential analysis",
+    requiredFields: ['retailTenants'] as (keyof PropertyData)[]
+  },
+  
+  // Advanced Industrial Metrics
+  functionalScore: {
+    name: "Functional Score",
+    category: "Industrial",
+    description: "Building functionality and utility scoring",
+    requiredFields: ['squareFootage', 'clearHeight'] as (keyof PropertyData)[]
+  },
+  tenantSuitability: {
+    name: "Tenant Suitability",
+    category: "Industrial",
+    description: "Tenant suitability and space requirements analysis",
+    requiredFields: ['squareFootage', 'clearHeight'] as (keyof PropertyData)[]
+  },
+  modernizationNeeds: {
+    name: "Modernization Needs",
+    category: "Industrial",
+    description: "Building modernization and capital needs analysis",
+    requiredFields: ['squareFootage', 'clearHeight'] as (keyof PropertyData)[]
+  },
+  locationScore: {
+    name: "Location Score",
+    category: "Industrial",
+    description: "Location and accessibility scoring",
+    requiredFields: ['distanceToHighway'] as (keyof PropertyData)[]
+  },
+  logisticsProfile: {
+    name: "Logistics Profile",
+    category: "Industrial",
+    description: "Logistics and distribution suitability analysis",
+    requiredFields: ['squareFootage'] as (keyof PropertyData)[]
+  },
+  laborAnalysis: {
+    name: "Labor Analysis",
+    category: "Industrial",
+    description: "Labor market and workforce analysis",
+    requiredFields: ['squareFootage'] as (keyof PropertyData)[]
+  },
+  lastMileSuitability: {
+    name: "Last Mile Suitability",
+    category: "Industrial",
+    description: "Last-mile delivery facility analysis",
+    requiredFields: ['squareFootage'] as (keyof PropertyData)[]
+  },
+  
+  // Advanced Multifamily Metrics
+  revenueMetrics: {
+    name: "Revenue Metrics",
+    category: "Multifamily",
+    description: "Comprehensive revenue performance analysis",
+    requiredFields: ['numberOfUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[]
+  },
+  lossToLease: {
+    name: "Loss to Lease",
+    category: "Multifamily",
+    description: "Loss-to-lease and rent growth analysis",
+    requiredFields: ['numberOfUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[]
+  },
+  pricingPower: {
+    name: "Pricing Power",
+    category: "Multifamily",
+    description: "Rental pricing power assessment",
+    requiredFields: ['numberOfUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[]
+  },
+  expenseRatio: {
+    name: "Expense Ratio",
+    category: "Multifamily",
+    description: "Operating expense ratio analysis",
+    requiredFields: ['operatingExpenses', 'grossIncome'] as (keyof PropertyData)[]
+  },
+  maintenanceAnalysis: {
+    name: "Maintenance Analysis",
+    category: "Multifamily",
+    description: "Maintenance cost and efficiency analysis",
+    requiredFields: ['operatingExpenses'] as (keyof PropertyData)[]
+  },
+  staffingEfficiency: {
+    name: "Staffing Efficiency",
+    category: "Multifamily",
+    description: "Staffing levels and efficiency metrics",
+    requiredFields: ['numberOfUnits'] as (keyof PropertyData)[]
+  },
+  operationalKPIs: {
+    name: "Operational KPIs",
+    category: "Multifamily",
+    description: "Key operational performance indicators",
+    requiredFields: ['numberOfUnits'] as (keyof PropertyData)[]
+  },
+  renovationROI: {
+    name: "Renovation ROI",
+    category: "Multifamily",
+    description: "Renovation return on investment analysis",
+    requiredFields: ['numberOfUnits', 'currentNOI'] as (keyof PropertyData)[]
+  },
+  marketPosition: {
+    name: "Market Position",
+    category: "Multifamily",
+    description: "Competitive market positioning analysis",
+    requiredFields: ['numberOfUnits', 'monthlyRentalIncome'] as (keyof PropertyData)[]
+  },
+  amenityGapAnalysis: {
+    name: "Amenity Gap Analysis",
+    category: "Multifamily",
+    description: "Amenity gap and enhancement opportunities",
+    requiredFields: ['numberOfUnits'] as (keyof PropertyData)[]
+  },
+  valueAddPotential: {
+    name: "Value-Add Potential",
+    category: "Multifamily",
+    description: "Value-add and improvement opportunities",
+    requiredFields: ['numberOfUnits', 'currentNOI'] as (keyof PropertyData)[]
+  },
+  
+  // Advanced Mixed-Use Metrics
+  componentPerformance: {
+    name: "Component Performance",
+    category: "Mixed-Use",
+    description: "Individual component performance analysis",
+    requiredFields: ['totalSquareFootage'] as (keyof PropertyData)[]
+  },
+  crossUseInteractions: {
+    name: "Cross-Use Interactions",
+    category: "Mixed-Use",
+    description: "Cross-use synergy and interaction analysis",
+    requiredFields: ['totalSquareFootage'] as (keyof PropertyData)[]
+  },
+  developmentPotential: {
+    name: "Development Potential",
+    category: "Mixed-Use",
+    description: "Development and redevelopment potential analysis",
+    requiredFields: ['totalSquareFootage'] as (keyof PropertyData)[]
+  },
+  densificationPotential: {
+    name: "Densification Potential",
+    category: "Mixed-Use",
+    description: "Densification and expansion opportunities",
+    requiredFields: ['totalSquareFootage'] as (keyof PropertyData)[]
+  },
+  
   // Multifamily Specific
   pricePerUnit: {
     name: "Price per Unit",
@@ -218,8 +706,43 @@ export const allMetrics = {
     category: "Multifamily",
     description: "Gross income adjusted for vacancy and collection losses",
     requiredFields: ['grossIncome', 'occupancyRate'] as (keyof PropertyData)[]
+  },
+  marketAverageRent: {
+    label: 'Market Average Rent per Unit (optional)',
+    category: 'projection',
+    type: 'number',
+    prefix: '$',
+    min: 0,
+    step: 100,
+    helperText: 'Market average rent for comparison (optional)'
+  },
+  
+  // Tenant Fields
+  officeTenants: {
+    label: 'Office Tenants',
+    category: 'property',
+    type: 'text',
+    helperText: 'Add office tenants with lease terms and rent information'
+  },
+  retailTenants: {
+    label: 'Retail Tenants',
+    category: 'property',
+    type: 'text',
+    helperText: 'Add retail tenants with sales performance and lease information'
   }
 };
+
+// Get packages based on analysis level
+export function getPackagesByLevel(
+  propertyType: string,
+  level: 'quick' | 'advanced'
+): CalculationPackage[] {
+  if (level === 'quick') {
+    return quickPackages[propertyType] || [];
+  } else {
+    return advancedPackages[propertyType] || [];
+  }
+}
 
 // Enhanced function to get required fields with asset-specific validation
 export function getRequiredFields(
@@ -289,13 +812,13 @@ export function getAvailableAssetAnalysis(
       validateAssetDataRequirements(propertyData as PropertyData, propertyData.propertyType) :
       { isValid: true, missingFields: [] };
     
-    return Object.entries(assetFunctions).map(([functionName, func]) => ({
+    return Object.entries(assetFunctions).map(([functionName]) => ({
       functionName,
       description: getFunctionDescription(functionName),
       available: validation.isValid,
       requirements: validation.missingFields
     }));
-  } catch (error) {
+  } catch {
     return [];
   }
 }
@@ -478,6 +1001,22 @@ export const fieldMetadata: Partial<Record<keyof PropertyData, {
     step: 100,
     helperText: 'Total square footage of the property'
   },
+  clearHeight: {
+    label: 'Clear Height (feet)',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 1,
+    helperText: 'Clear height from floor to ceiling in feet'
+  },
+  totalUnits: {
+    label: 'Total Units',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 1,
+    helperText: 'Total number of units in the property'
+  },
   numberOfUnits: {
     label: 'Number of Units',
     category: 'property',
@@ -539,6 +1078,158 @@ export const fieldMetadata: Partial<Record<keyof PropertyData, {
     prefix: '$',
     min: 0,
     step: 1000,
-    helperText: 'Annual loan payments'
+    helperText: 'Annual debt service payment'
+  },
+  
+  // New "Wow" Metrics Fields
+  monthlyRentalIncome: {
+    label: 'Total Monthly Rental Income',
+    category: 'financial',
+    type: 'number',
+    prefix: '$',
+    min: 0,
+    step: 1000,
+    helperText: 'Total monthly rental income for multifamily properties'
+  },
+  marketAverageRent: {
+    label: 'Market Average Rent per Unit (optional)',
+    category: 'projection',
+    type: 'number',
+    prefix: '$',
+    min: 0,
+    step: 100,
+    helperText: 'Market average rent for comparison (optional)'
+  },
+  
+  // Additional Property Fields
+  rentableSquareFeet: {
+    label: 'Rentable Square Feet',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 100,
+    helperText: 'Total rentable square footage of the office building'
+  },
+  noi: {
+    label: 'NOI',
+    category: 'financial',
+    type: 'number',
+    prefix: '$',
+    min: 0,
+    step: 1000,
+    helperText: 'Net Operating Income'
+  },
+  grossLeasableArea: {
+    label: 'Gross Leasable Area',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 100,
+    helperText: 'Total gross leasable area of the retail property'
+  },
+  totalSquareFootage: {
+    label: 'Total Square Footage',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 100,
+    helperText: 'Total square footage of the mixed-use property'
+  },
+  numberOfDockDoors: {
+    label: 'Number of Dock Doors',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 1,
+    helperText: 'Total number of dock doors in the industrial facility'
+  },
+  powerCapacity: {
+    label: 'Power Capacity (KW)',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 100,
+    helperText: 'Total power capacity in kilowatts'
+  },
+  truckCourtDepth: {
+    label: 'Truck Court Depth (feet)',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 10,
+    helperText: 'Depth of truck court in feet'
+  },
+  distanceToHighway: {
+    label: 'Distance to Highway (miles)',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 0.1,
+    helperText: 'Distance to nearest highway in miles'
+  },
+  distanceToPort: {
+    label: 'Distance to Port (miles)',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 0.1,
+    helperText: 'Distance to nearest port in miles'
+  },
+  distanceToRail: {
+    label: 'Distance to Rail (miles)',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 0.1,
+    helperText: 'Distance to nearest rail facility in miles'
+  },
+  trafficCount: {
+    label: 'Daily Traffic Count',
+    category: 'property',
+    type: 'number',
+    min: 0,
+    step: 1000,
+    helperText: 'Average daily traffic count'
+  },
+  currentOccupancy: {
+    label: 'Current Occupancy Rate',
+    category: 'financial',
+    type: 'percentage',
+    min: 0,
+    max: 100,
+    step: 1,
+    helperText: 'Current occupancy rate as percentage'
+  },
+  averageRentPerUnit: {
+    label: 'Average Rent per Unit',
+    category: 'financial',
+    type: 'number',
+    prefix: '$',
+    min: 0,
+    step: 100,
+    helperText: 'Average rent per unit'
+  },
+  averageRentPSF: {
+    label: 'Average Rent per SF',
+    category: 'financial',
+    type: 'number',
+    prefix: '$',
+    min: 0,
+    step: 1,
+    helperText: 'Average rent per square foot'
+  },
+  
+  // Tenant Fields
+  officeTenants: {
+    label: 'Office Tenants',
+    category: 'property',
+    type: 'text',
+    helperText: 'Add office tenants with lease terms and rent information'
+  },
+  retailTenants: {
+    label: 'Retail Tenants',
+    category: 'property',
+    type: 'text',
+    helperText: 'Add retail tenants with sales performance and lease information'
   }
 }; 

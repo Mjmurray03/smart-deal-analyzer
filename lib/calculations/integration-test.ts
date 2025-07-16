@@ -1,13 +1,12 @@
 // lib/calculations/integration-test.ts
 // Comprehensive integration test for enhanced asset-specific modules
 
-import { PropertyData, MetricFlags, PropertyType, DealAssessment } from './types';
+import { PropertyData, MetricFlags } from './types';
 import { calculateMetrics, calculateDealAssessment } from './metrics';
 import { 
   getAssetCalculationFunctions, 
   validateAssetDataRequirements,
-  getAvailableMetrics,
-  getAssetMetricCategories 
+  getAssetMetricCategories
 } from './asset-metrics';
 import { 
   getAssetPackageRecommendations, 
@@ -141,6 +140,7 @@ const testMetricFlags: MetricFlags = {
   egi: false
 };
 
+/* 
 const mockAssessment: DealAssessment = {
   overall: 'Excellent',
   recommendation: 'Strong deal',
@@ -152,6 +152,7 @@ const mockAssessment: DealAssessment = {
   },
   activeMetrics: 4
 };
+*/
 
 /**
  * Comprehensive integration test function

@@ -2,6 +2,8 @@
 // Clean, consolidated type definitions for the Smart Deal Analyzer
 // All duplicates removed, all custom additions preserved
 
+import { RetailTenant } from './calculations/types';
+
 export type PropertyType = 'office' | 'retail' | 'industrial' | 'multifamily' | 'mixed-use';
 
 export interface PropertyData {
@@ -40,6 +42,9 @@ export interface PropertyData {
   leaseExpirations?: Date[];
   parkingRatio?: number;
   walt?: number; // Weighted Average Lease Term
+  
+  // Office Tenants Data
+  officeTenants?: OfficeTenantsData;
   
   // Retail-specific
   totalGLA?: number;
@@ -207,6 +212,11 @@ export interface PropertyData {
   residentAnalytics?: any;
   revenueOptimization?: any;
   unitAnalytics?: any;
+  
+  // New "Wow" Metrics Data Fields
+  monthlyRentalIncome?: number; // Multifamily - for revenue per unit calculation
+  marketAverageRent?: number; // Multifamily - for market comparison
+  retailTenants?: RetailTenant[]; // Retail - for sales per SF analysis
   
   // Mixed-use-specific
   componentBreakdown?: any;
@@ -734,6 +744,17 @@ export interface PropertyData {
   annualDebtService?: number;
 }
 
+// Office Tenants Data Interfaces
+export interface OfficeTenantsData {
+  tenants: SimpleTenant[];
+}
+
+export interface SimpleTenant {
+  name: string;
+  annualRent: number;
+  leaseExpiration: string; // YYYY-MM format for easy input
+}
+
 export interface MetricFlags {
   // Basic Metrics
   capRate: boolean;
@@ -1162,6 +1183,13 @@ export interface MetricFlags {
   // Special-case metrics with ampersands, underscores, etc.
   'f&b_capture_rate'?: boolean;
   'cross subsidyAnalysis'?: boolean;
+
+  // New "Wow" Metrics
+  simpleWalt?: boolean; // Office - Simple WALT calculation
+  clearHeightAnalysis?: boolean; // Industrial - Clear height premium analysis
+  revenuePerUnit?: boolean; // Multifamily - Revenue per unit analysis
+  industrialMetrics?: boolean; // Industrial - Clear height premium analysis
+  multifamilyMetrics?: boolean; // Multifamily - Revenue per unit with market comparison
 }
 
 export interface CalculatedMetrics {
@@ -1176,6 +1204,34 @@ export interface CalculatedMetrics {
   grm?: number | null;
   pricePerUnit?: number | null;
   egi?: number | null;
+  
+  // New "Wow" Metrics Results
+  walt?: number | null; // Office - WALT in years
+  simpleWalt?: number | null; // Office - Simple WALT in years
+  salesPerSF?: {
+    average: number;
+    byTenant: { name: string; salesPerSF: number }[];
+  } | null; // Retail - Sales per SF analysis
+  clearHeightAnalysis?: {
+    pricePerSF: number;
+    clearHeightCategory: string;
+    estimatedPremium: string;
+  } | null; // Industrial - Clear height premium analysis
+  revenuePerUnit?: {
+    revenuePerUnit: number;
+    annualizedRevenue: number;
+    marketComparison?: string;
+  } | null; // Multifamily - Revenue per unit analysis
+  industrialMetrics?: {
+    pricePerSF: number;
+    clearHeightCategory: string;
+    estimatedPremium: string;
+  } | null; // Industrial - Clear height premium analysis
+  multifamilyMetrics?: {
+    revenuePerUnit: number;
+    annualizedRevenue: number;
+    marketComparison?: string;
+  } | null; // Multifamily - Revenue per unit with market comparison
 }
 
 export type AssessmentLevel = 'strong' | 'moderate' | 'weak' | 'insufficient';

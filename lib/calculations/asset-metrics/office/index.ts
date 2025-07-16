@@ -357,8 +357,8 @@ export interface MarketIntelligence {
 
 // Core analysis functions
 export function analyzeTenantFinancialHealth(
-  tenants: OfficeTenant[],
-  marketData: MarketIntelligence
+  _tenants: OfficeTenant[],
+  _marketData: MarketIntelligence
 ): {
   portfolioCredit: {
     weightedCreditScore: number;
@@ -410,8 +410,8 @@ export function analyzeTenantFinancialHealth(
 }
 
 export function analyzeLeaseEconomics(
-  tenants: OfficeTenant[],
-  marketData: MarketIntelligence
+  _tenants: OfficeTenant[],
+  _marketData: MarketIntelligence
 ): {
   leaseValuation: {
     tenant: string;
@@ -455,10 +455,10 @@ export function analyzeLeaseEconomics(
 }
 
 export function analyzeBuildingOperations(
-  building: BuildingOperations,
-  tenants: OfficeTenant[],
-  propertyAge: number,
-  totalSF: number
+  _building: BuildingOperations,
+  _tenants: OfficeTenant[],
+  _propertyAge: number,
+  _totalSF: number
 ): {
   operationalEfficiency: {
     overallScore: number;
@@ -502,7 +502,7 @@ export function analyzeBuildingOperations(
 }
 
 export function analyzeMarketPositioning(
-  property: {
+  _property: {
     tenants: OfficeTenant[];
     building: BuildingOperations;
     totalSF: number;
@@ -510,7 +510,7 @@ export function analyzeMarketPositioning(
     avgRent: number;
     parkingRatio: number;
   },
-  market: MarketIntelligence
+  _market: MarketIntelligence
 ): {
   marketPosition: {
     overallRank: number;
@@ -629,9 +629,12 @@ export function calculateRetentionProbability(
   }
 ): number {
   let probability = 0.7;
-  const rentVsMarket = tenant.baseRentSchedule[0].rentPSF / marketConditions.avgRent;
-  if (rentVsMarket < 0.9) probability += 0.15;
-  else if (rentVsMarket > 1.1) probability -= 0.15;
+  
+  if (tenant.baseRentSchedule.length > 0) {
+    const rentVsMarket = tenant.baseRentSchedule[0].rentPSF / marketConditions.avgRent;
+    if (rentVsMarket < 0.9) probability += 0.15;
+    else if (rentVsMarket > 1.1) probability -= 0.15;
+  }
   
   if (tenant.creditRating && ['AAA', 'AA', 'A'].includes(tenant.creditRating)) {
     probability += 0.1;

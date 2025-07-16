@@ -1,7 +1,7 @@
 // lib/calculations/asset-metrics/retail/index.ts
 // Comprehensive retail property analytics for institutional investors
 
-import { PropertyData } from '../../types';
+// Types are defined locally to avoid unused imports
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -167,7 +167,14 @@ export function analyzeSalesPerformance(
   let totalLastYearSales = 0;
   let totalSF = 0;
   
-  const tenantMetrics: any[] = [];
+  const tenantMetrics: Array<{
+    tenant: string;
+    category: string;
+    salesPSF: number;
+    growth: number;
+    sales: number;
+    sf: number;
+  }> = [];
   const categoryMetrics = new Map<string, { sales: number; sf: number; lastYear: number }>();
   
   tenants.forEach(tenant => {
@@ -301,14 +308,14 @@ export function analyzeSalesPerformance(
     {
       metric: 'Sales PSF',
       centerValue: totalSalesPSF,
-      benchmark: benchmarks.avgSalesPSF,
-      percentile: totalSalesPSF > benchmarks.avgSalesPSF ? 75 : 25
+      benchmark: benchmarks.salesPSF,
+      percentile: totalSalesPSF > benchmarks.salesPSF ? 75 : 25
     },
     {
       metric: 'Sales Growth',
       centerValue: salesGrowthYOY,
-      benchmark: benchmarks.avgGrowth,
-      percentile: salesGrowthYOY > benchmarks.avgGrowth ? 75 : 25
+      benchmark: benchmarks.growthRate,
+      percentile: salesGrowthYOY > benchmarks.growthRate ? 75 : 25
     }
   ];
   
@@ -375,10 +382,14 @@ export function analyzeCoTenancy(
 } {
   // Identify anchors and their dependencies
   const anchors = tenants.filter(t => t.category === 'Anchor' || t.category === 'Junior Anchor');
-  const anchorNames = anchors.map(a => a.tenantName);
   
   // Analyze co-tenancy clauses
-  const coTenancyTriggers: any[] = [];
+  const coTenancyTriggers: Array<{
+    tenant: string;
+    triggerTenant: string;
+    remedy: string;
+    probability: number;
+  }> = [];
   let exposedGLA = 0;
   let exposedRent = 0;
   
@@ -467,8 +478,6 @@ export function analyzeCoTenancy(
   const essentialTenants = tenants.filter(t => 
     t.essentialService || t.category === 'Anchor' || t.salesPSF! > 500
   );
-  const essentialOccupancy = (essentialTenants.reduce((sum, t) => 
-    sum + t.squareFootage, 0) / totalGLA) * 100;
   
   // Minimum occupancy varies by center type
   const minimumOccupancy = totalGLA > 500000 ? 85 : 
@@ -594,7 +603,9 @@ export function analyzeTradeArea(
 } {
   // Define primary trade area (typically 3-mile for neighborhood, 5-mile for community)
   const primaryRadius = demographics[0]; // Assume first is primary
-  const totalPopulation = demographics.reduce((sum, d) => sum + d.population, 0);
+  if (!primaryRadius) {
+    throw new Error('Demographics data is required for trade area analysis');
+  }
   
   // Calculate spending power
   const avgHouseholdSpending = 35000; // Annual retail spending per household
@@ -670,7 +681,6 @@ export function analyzeTradeArea(
   }
   
   // Age and condition
-  const avgCompetitorAge = 15; // Assumed
   if (competitors.some(c => c.distance < 2)) {
     vulnerabilities.push('Direct competition within 2 miles');
   }
@@ -1348,8 +1358,16 @@ function getIdealOCR(merchandiseType: string, centerType: string): number {
   return ocrMatrix[merchandiseType]?.[centerType] || 10;
 }
 
-function getCenterBenchmarks(centerType: string): any {
-  const benchmarks: Record<string, any> = {
+function getCenterBenchmarks(centerType: string): {
+  salesPSF: number;
+  growthRate: number;
+  avgOCR: number;
+} {
+  const benchmarks: Record<string, {
+    salesPSF: number;
+    growthRate: number;
+    avgOCR: number;
+  }> = {
     'Regional Mall': { salesPSF: 550, growthRate: 2.5, avgOCR: 12 },
     'Lifestyle': { salesPSF: 450, growthRate: 3.5, avgOCR: 10 },
     'Strip': { salesPSF: 350, growthRate: 2.0, avgOCR: 8 },
@@ -1357,7 +1375,7 @@ function getCenterBenchmarks(centerType: string): any {
     'Outlet': { salesPSF: 400, growthRate: 3.0, avgOCR: 9 }
   };
   
-  return benchmarks[centerType] || benchmarks['Strip'];
+  return benchmarks[centerType] || benchmarks['Strip'] || { salesPSF: 350, growthRate: 2.0, avgOCR: 8 };
 }
 
 function analyzeTenantHealth(tenant: RetailTenant): { riskLevel: string } {
@@ -1385,7 +1403,13 @@ function calculateCategoryDemand(
 
 function calculateCategorySupply(
   tenants: RetailTenant[],
-  competitors: any[]
+  competitors: Array<{
+    name: string;
+    type: string;
+    distance: number;
+    gla: number;
+    anchors: string[];
+  }>
 ): Map<string, number> {
   const categorySupply = new Map<string, number>();
   

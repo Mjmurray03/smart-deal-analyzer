@@ -1,7 +1,7 @@
 // lib/calculations/asset-metrics/multifamily/index.ts
 // Comprehensive multifamily property analytics for institutional investors
 
-import { PropertyData } from '../../types';
+// Types are defined locally to avoid unused imports
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -137,9 +137,7 @@ export interface ResidentProfile {
  */
 export function analyzeRevenuePerformance(
   units: Unit[],
-  marketComps: MarketComps[],
-  amenities: PropertyAmenities,
-  operatingExpenses: number
+  marketComps: MarketComps[]
 ): {
   revenueMetrics: {
     grossPotentialRent: number;
@@ -261,7 +259,7 @@ export function analyzeRevenuePerformance(
       revenuePSF: Number((typeRevenue / typeSF).toFixed(2)),
       percentOfRevenue: Number((typeRevenue / actualRent * 100).toFixed(1))
     };
-  }).filter(analysis => analysis !== null) as any[];
+  }).filter((analysis): analysis is NonNullable<typeof analysis> => analysis !== null);
   
   // Rent growth analysis (simplified - would need historical data)
   const renewalIncreases = 3.5; // Assumed
@@ -293,7 +291,8 @@ export function analyzeRevenuePerformance(
   const otherIncomeAnalysis = otherIncomeCategories.map(category => {
     const categoryIncome = occupiedUnits.reduce((sum, u) => {
       if (!u.otherIncome) return sum;
-      return sum + ((u.otherIncome as any)[category] || 0);
+      const income = u.otherIncome as Record<string, number>;
+      return sum + (income[category] || 0);
     }, 0);
     
     const monthlyAmount = categoryIncome;
@@ -301,9 +300,11 @@ export function analyzeRevenuePerformance(
     const percentOfRevenue = (categoryIncome * 12 / totalRevenue) * 100;
     
     // Growth potential based on market and current penetration
-    const penetration = occupiedUnits.filter(u => 
-      u.otherIncome && (u.otherIncome as any)[category] > 0
-    ).length / occupiedUnits.length;
+    const penetration = occupiedUnits.filter(u => {
+      if (!u.otherIncome) return false;
+      const income = u.otherIncome as Record<string, number>;
+      return (income[category] || 0) > 0;
+    }).length / occupiedUnits.length;
     
     const growthPotential = (1 - penetration) * 50; // Max 50% growth if 0% penetration
     
@@ -460,8 +461,8 @@ export function analyzeOperatingPerformance(
   
   const expenseBreakdown = Object.entries(expenses).map(([category, amount]) => {
     const percentOfTotal = (amount / totalExpenses) * 100;
-    const benchmark = benchmarks[category] * 100;
-    const variance = ((percentOfTotal - benchmark) / benchmark) * 100;
+    const benchmark = (benchmarks[category] || 0) * 100;
+    const variance = benchmark > 0 ? ((percentOfTotal - benchmark) / benchmark) * 100 : 0;
     
     return {
       category: category.charAt(0).toUpperCase() + category.slice(1),
@@ -792,7 +793,7 @@ export function analyzeMarketPosition(
   ];
   
   const amenityGapAnalysis = amenityChecklist.map(amenity => {
-    const hasAmenity = (property.amenities as any)[amenity.key] || false;
+    const hasAmenity = Boolean((property.amenities as unknown as Record<string, unknown>)[amenity.key]);
     const marketAdoption = marketComps.filter(c => {
       // Simplified - would need actual amenity data for comps
       return c.amenityScore > 70; // Assume high-scoring comps have it
@@ -802,14 +803,26 @@ export function analyzeMarketPosition(
     if (!hasAmenity && marketAdoption > 70) priority = 'High';
     else if (!hasAmenity && marketAdoption > 40) priority = 'Medium';
     
-    return {
+    const result: {
+      amenity: string;
+      marketAdoption: number;
+      hasAmenity: boolean;
+      additionCost?: number;
+      rentPremium?: number;
+      priority: 'High' | 'Medium' | 'Low';
+    } = {
       amenity: amenity.name,
       marketAdoption,
       hasAmenity,
-      additionCost: hasAmenity ? undefined : amenity.cost,
-      rentPremium: hasAmenity ? undefined : amenity.premium,
       priority
     };
+    
+    if (!hasAmenity) {
+      result.additionCost = amenity.cost;
+      result.rentPremium = amenity.premium;
+    }
+    
+    return result;
   });
   
   // Demographic alignment
@@ -939,19 +952,13 @@ export function analyzeValueAddPotential(
   }[];
 } {
   const unRenovatedUnits = units.filter(u => !u.renovated);
-  const renovatedUnits = units.filter(u => u.renovated);
   
   // Calculate current metrics
   const avgUnrenovatedRent = unRenovatedUnits.length > 0 ?
     unRenovatedUnits.filter(u => u.occupied).reduce((sum, u) => sum + u.currentRent, 0) / 
     unRenovatedUnits.filter(u => u.occupied).length : 0;
   
-  const avgRenovatedRent = renovatedUnits.length > 0 ?
-    renovatedUnits.filter(u => u.occupied).reduce((sum, u) => sum + u.currentRent, 0) / 
-    renovatedUnits.filter(u => u.occupied).length : 0;
-  
-  const currentPremium = renovatedUnits.length > 0 ? 
-    ((avgRenovatedRent - avgUnrenovatedRent) / avgUnrenovatedRent) * 100 : 0;
+
   
   // Market support analysis
   const renovatedComps = marketComps.filter(c => c.renovated).length;
@@ -1135,7 +1142,7 @@ function calculateAmenityScore(amenities: PropertyAmenities): number {
   };
   
   Object.entries(weights).forEach(([amenity, weight]) => {
-    if ((amenities as any)[amenity]) {
+    if ((amenities as unknown as Record<string, unknown>)[amenity]) {
       score += weight;
     }
   });

@@ -2,7 +2,7 @@
 // Clean, consolidated calculation types for the Smart Deal Analyzer
 // All duplicates removed, all custom additions preserved
 
-import { MetricFlags, PropertyData } from '../types-clean';
+import { MetricFlags, PropertyData } from '../types';
 
 export type PropertyType = 'office' | 'retail' | 'industrial' | 'multifamily' | 'mixed-use';
 
