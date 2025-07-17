@@ -1,7 +1,8 @@
-import { PropertyData, MetricFlags, CalculatedMetrics } from './types';
+import { PropertyData, MetricFlags, CalculatedMetrics, CalculationPackage } from './types';
 import { validatePropertyData, validateMetricCalculation, isValidNumber } from './validation';
 import { calculateMetrics } from './metrics';
 import { quickPackages, advancedPackages } from './packages';
+import { FieldDefinition } from './packages/enhanced-package-types';
 
 export interface ValidationResult {
   isValid: boolean;
@@ -14,7 +15,33 @@ export interface CalculationResult {
   metrics: CalculatedMetrics;
   validationErrors: Record<string, string>;
   warnings: string[];
-  error?: string;
+  error: string;
+}
+
+// Type definitions for field handling
+type FieldType = string | FieldDefinition;
+
+// Type guards for field validation
+function isFieldDefinition(field: FieldType): field is FieldDefinition {
+  return typeof field === 'object' && field !== null && 'field' in field && 'type' in field;
+}
+
+function getFieldName(field: FieldType): string {
+  return isFieldDefinition(field) ? field.field : field;
+}
+
+function getFieldType(field: FieldType): string {
+  return isFieldDefinition(field) ? field.type : 'number';
+}
+
+// Enhanced package type that can handle both old and new field formats
+interface EnhancedPackage {
+  id: string;
+  name: string;
+  description: string;
+  requiredFields: FieldType[];
+  optionalFields?: FieldType[];
+  includedMetrics: string[];
 }
 
 /**
@@ -44,15 +71,17 @@ export function validateDataForPackage(packageId: string, data: PropertyData): V
 
   // Validate required fields for package
   if (selectedPackage.requiredFields) {
-    selectedPackage.requiredFields.forEach(field => {
-      const fieldName = typeof field === 'string' ? field : field.field;
-      const fieldType = typeof field === 'string' ? 'number' : field.type;
+    (selectedPackage as EnhancedPackage).requiredFields.forEach(field => {
+      const fieldName = getFieldName(field);
+      const fieldType = getFieldType(field);
       
-      if (!data[fieldName as keyof PropertyData]) {
+      const fieldValue = data[fieldName as keyof PropertyData];
+      
+      if (!fieldValue) {
         errors.push(`${fieldName} is required for ${selectedPackage.name}`);
-      } else if (fieldType === 'number' && !isValidNumber(data[fieldName as keyof PropertyData])) {
+      } else if (fieldType === 'number' && !isValidNumber(fieldValue)) {
         errors.push(`${fieldName} must be a valid number`);
-      } else if (fieldType === 'currency' && data[fieldName as keyof PropertyData] as number <= 0) {
+      } else if (fieldType === 'currency' && typeof fieldValue === 'number' && fieldValue <= 0) {
         errors.push(`${fieldName} must be greater than 0`);
       }
     });
@@ -131,7 +160,7 @@ export function validateAndCalculate(packageId: string, data: PropertyData): Cal
       metrics: calculationResult,
       validationErrors: calculationResult.validationErrors || {},
       warnings: [...packageValidation.warnings, ...resultValidation.warnings],
-      error: resultValidation.errors.length > 0 ? resultValidation.errors.join(', ') : undefined
+      error: resultValidation.errors.length > 0 ? resultValidation.errors.join(', ') : ''
     };
 
   } catch (error) {
@@ -158,7 +187,7 @@ export function validateCalculationResults(results: CalculatedMetrics): Validati
   const warnings: string[] = [];
 
   // Validate Cap Rate
-  if (results.capRate !== undefined) {
+  if (results.capRate !== undefined && results.capRate !== null) {
     if (results.capRate < 0) {
       errors.push('Cap Rate cannot be negative');
     } else if (results.capRate > 50) {
@@ -171,7 +200,7 @@ export function validateCalculationResults(results: CalculatedMetrics): Validati
   }
 
   // Validate Cash-on-Cash Return
-  if (results.cashOnCash !== undefined) {
+  if (results.cashOnCash !== undefined && results.cashOnCash !== null) {
     if (results.cashOnCash < -50) {
       errors.push('Cash-on-Cash Return is unrealistically negative');
     } else if (results.cashOnCash > 100) {
@@ -182,7 +211,7 @@ export function validateCalculationResults(results: CalculatedMetrics): Validati
   }
 
   // Validate DSCR
-  if (results.dscr !== undefined) {
+  if (results.dscr !== undefined && results.dscr !== null) {
     if (results.dscr < 0) {
       errors.push('DSCR cannot be negative');
     } else if (results.dscr < 1) {
@@ -193,7 +222,7 @@ export function validateCalculationResults(results: CalculatedMetrics): Validati
   }
 
   // Validate LTV
-  if (results.ltv !== undefined) {
+  if (results.ltv !== undefined && results.ltv !== null) {
     if (results.ltv < 0) {
       errors.push('LTV cannot be negative');
     } else if (results.ltv > 100) {
@@ -204,7 +233,7 @@ export function validateCalculationResults(results: CalculatedMetrics): Validati
   }
 
   // Validate Price per SF
-  if (results.pricePerSF !== undefined) {
+  if (results.pricePerSF !== undefined && results.pricePerSF !== null) {
     if (results.pricePerSF <= 0) {
       errors.push('Price per SF must be positive');
     } else if (results.pricePerSF > 1000) {
@@ -213,7 +242,7 @@ export function validateCalculationResults(results: CalculatedMetrics): Validati
   }
 
   // Validate GRM
-  if (results.grm !== undefined) {
+  if (results.grm !== undefined && results.grm !== null) {
     if (results.grm <= 0) {
       errors.push('GRM must be positive');
     } else if (results.grm > 30) {

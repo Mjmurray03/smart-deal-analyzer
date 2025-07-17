@@ -2,9 +2,11 @@
 // Clean, consolidated calculation types for the Smart Deal Analyzer
 // All duplicates removed, all custom additions preserved
 
-import { MetricFlags, PropertyData } from '../types';
+// Removed unused import - MetricFlags and PropertyData are exported from ../types but not used here
 
 export type PropertyType = 'office' | 'retail' | 'industrial' | 'multifamily' | 'mixed-use';
+
+export type AssessmentLevel = 'Excellent' | 'Good' | 'Fair' | 'Poor';
 
 // ==================== ENHANCED ASSET-SPECIFIC TYPES ====================
 
@@ -670,6 +672,13 @@ export interface BuildingSpecs {
   fireSuppressionType: 'ESFR' | 'Wet Pipe' | 'Dry Pipe' | 'None';
   sprinklerDensity?: string; // e.g., "K-25.2"
   
+  // Additional location metrics
+  distanceToHighway?: number;
+  distanceToAirport?: number;
+  populationOneHour?: number;
+  households3Miles?: number;
+  ecommerceDeliveryVolume?: number;
+  
   // Specialized
   railSiding?: {
     length: number; // feet
@@ -789,11 +798,24 @@ export interface CrossUseAnalysis {
   }[];
 }
 
+// Missing interface for industrial calculations
+export interface PropertyRequirements {
+  minSF?: number;
+  maxSF?: number;
+  clearHeightMin?: number;
+  clearHeightIdeal?: number;
+  dockDoorsMin?: number;
+  dockDoorsIdeal?: number;
+  officePercentage?: number;
+  // Missing fields that are referenced in industrial calculations
+  idealPowerPerSF?: number;
+  minPowerPerSF?: number;
+  [key: string]: any;
+}
+
 // ==================== EXISTING TYPES ====================
 
-export type AssessmentLevel = 'Excellent' | 'Good' | 'Fair' | 'Poor';
-
-export interface DealAssessment {
+export interface LocalDealAssessment {
   overall: AssessmentLevel;
   recommendation: string;
   metricScores: {
@@ -801,6 +823,8 @@ export interface DealAssessment {
   };
   activeMetrics: number;
 }
+
+export type DealAssessment = LocalDealAssessment;
 
 // Re-export the main types for use in this module
 export type { MetricFlags, PropertyData, CalculatedMetrics, CalculationPackage } from '../types'; 

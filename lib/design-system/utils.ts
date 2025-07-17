@@ -5,7 +5,7 @@
  */
 
 import type { Mode, MetricStatus } from './tokens';
-import { colors, utils as tokenUtils } from './tokens';
+import { colors, tokenUtils } from './tokens';
 
 // ==================== CLASS NAME UTILITIES ====================
 
@@ -46,9 +46,9 @@ export function responsive(
 export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result ? {
-    r: parseInt(result[1], 16),
-    g: parseInt(result[2], 16),
-    b: parseInt(result[3], 16),
+    r: parseInt(result[1]!, 16),
+    g: parseInt(result[2]!, 16),
+    b: parseInt(result[3]!, 16),
   } : null;
 }
 
@@ -56,7 +56,7 @@ export function hexToRgb(hex: string): { r: number; g: number; b: number } | nul
  * Adds opacity to a color
  */
 export function withOpacity(color: string, opacity: number): string {
-  return tokenUtils.withOpacity(color, opacity);
+  return tokenUtils.withOpacity(color ?? '', opacity ?? 1);
 }
 
 /**
@@ -163,7 +163,7 @@ export function getFontSize(
  * Gets font weight based on mode and emphasis
  */
 export function getFontWeight(
-  mode: Mode,
+  _mode: Mode,
   emphasis: 'normal' | 'medium' | 'semibold' | 'bold'
 ): string {
   const weights = {
@@ -358,7 +358,7 @@ export function getFocusRing(color: string = 'blue'): string {
 /**
  * Creates skip link for keyboard navigation
  */
-export function createSkipLink(targetId: string, label: string): string {
+export function createSkipLink(_targetId: string, label: string): string {
   return `Skip to ${label}`;
 }
 
@@ -457,10 +457,10 @@ export function matchesBreakpoint(breakpoint: 'sm' | 'md' | 'lg' | 'xl'): boolea
 export function exportToCSV(data: Record<string, unknown>[], filename: string): void {
   if (!data.length) return;
   
-  const headers = Object.keys(data[0]);
+  const headers = Object.keys(data[0] || {});
   const csvContent = [
     headers.join(','),
-    ...data.map(row => headers.map(header => row[header]).join(','))
+    ...data.map(row => headers.map(header => String(row[header] || '')).join(','))
   ].join('\n');
   
   const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -493,14 +493,14 @@ export async function copyToClipboard(text: string): Promise<boolean> {
  * Checks if value is a valid metric status
  */
 export function isMetricStatus(value: unknown): value is MetricStatus {
-  return ['excellent', 'good', 'fair', 'poor'].includes(value);
+  return ['excellent', 'good', 'fair', 'poor'].includes(value as string);
 }
 
 /**
  * Checks if value is a valid mode
  */
 export function isMode(value: unknown): value is Mode {
-  return ['quickStart', 'professional'].includes(value);
+  return ['quickStart', 'professional'].includes(value as string);
 }
 
 // ==================== LOCAL STORAGE UTILITIES ====================

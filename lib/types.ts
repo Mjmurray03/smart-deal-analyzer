@@ -32,6 +32,18 @@ export interface PropertyData {
   // Investment Analysis
   discountRate: number;
   holdingPeriod: number;
+  
+  // Missing fields for calculations
+  selectedPackageId?: string;
+  columnWidth?: number;
+  columnDepth?: number;
+  tenants?: SimpleTenant[];
+  optionProbability?: number;
+  truckCourtDepth?: number;
+  industrialTenants?: any;
+  distanceToRail?: number;
+  schoolRating?: number;
+  crimeIndex?: number;
 
   // Enhanced Property Data for Institutional Analysis
   // Office-specific
@@ -772,6 +784,17 @@ export interface MetricFlags {
   grm: boolean;
   pricePerUnit: boolean;
   egi: boolean;
+  
+  // Missing common metrics
+  effectiveRentPSF?: boolean;
+  tenantFinancialHealth?: boolean;
+  leaseValuation?: boolean;
+  tenantHealth?: boolean;
+  tradeAreaAnalysis?: boolean;
+  functionalScore?: boolean;
+  revenueMetrics?: boolean;
+  marketPosition?: boolean;
+  marketPositioning?: boolean;
 
   // Enhanced Institutional Metrics
   // Office-specific
@@ -858,7 +881,6 @@ export interface MetricFlags {
   railAccess?: boolean;
   environmentalRisk?: boolean;
   expansionPotential?: boolean;
-  marketPositioning?: boolean;
   leaseStability?: boolean;
   buildingSystems?: boolean;
   energyEfficiency?: boolean;
@@ -1205,6 +1227,12 @@ export interface CalculatedMetrics {
   pricePerUnit?: number | null;
   egi?: number | null;
   
+  // Missing common metrics
+  effectiveRentPSF?: number | null;
+  packageError?: string;
+  assetAnalysis?: any;
+  validationErrors?: Record<string, string>;
+  
   // New "Wow" Metrics Results
   walt?: number | null; // Office - WALT in years
   simpleWalt?: number | null; // Office - Simple WALT in years
@@ -1232,6 +1260,9 @@ export interface CalculatedMetrics {
     annualizedRevenue: number;
     marketComparison?: string;
   } | null; // Multifamily - Revenue per unit with market comparison
+  
+  // Allow additional calculated metrics
+  [key: string]: any;
 }
 
 export type AssessmentLevel = 'strong' | 'moderate' | 'weak' | 'insufficient';

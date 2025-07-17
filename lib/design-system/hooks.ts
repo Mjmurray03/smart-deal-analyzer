@@ -6,7 +6,7 @@
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
 import type { Mode, MetricStatus } from './tokens';
-import { utils } from './tokens';
+// import { utils } from './tokens';
 
 // ==================== MODE MANAGEMENT ====================
 
@@ -42,7 +42,7 @@ export function useDesignMode() {
     switchMode(mode === 'quickStart' ? 'professional' : 'quickStart');
   }, [mode, switchMode]);
 
-  const modeTokens = useMemo(() => utils.getMode(mode), [mode]);
+  const modeTokens = useMemo(() => ({ mode }), [mode]);
 
   return {
     mode,
@@ -74,7 +74,15 @@ export function useMetricStatus(value: number | null, thresholds: {
     return 'poor';
   }, [value, thresholds]);
 
-  const color = useMemo(() => utils.getMetricColor(status), [status]);
+  const color = useMemo(() => {
+    switch (status) {
+      case 'excellent': return 'green';
+      case 'good': return 'blue';
+      case 'fair': return 'yellow';
+      case 'poor': return 'red';
+      default: return 'gray';
+    }
+  }, [status]);
 
   return {
     status,

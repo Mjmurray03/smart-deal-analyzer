@@ -1,15 +1,13 @@
 'use client';
 
 import { useState } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeftIcon, ChartBarIcon, UserGroupIcon, BuildingOfficeIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 import { PropertyData, MetricFlags, PropertyType } from '@/lib/calculations/types';
 import { advancedPackages } from '@/lib/calculations/packages';
-import { calculateMetrics } from '@/lib/calculations/metrics';
 import EnhancedDynamicInputForm from '@/components/calculator/EnhancedDynamicInputForm';
-import EnhancedMetricsDisplay from '@/components/results/EnhancedMetricsDisplay';
 
 interface FieldObject {
   field: string;
@@ -18,35 +16,21 @@ interface FieldObject {
 
 export default function AdvancedAnalysisPropertyPage() {
   const params = useParams();
-  // const router = useRouter();
+  const router = useRouter();
   const propertyType = params.propertyType as string;
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
-  const [calculatedMetrics, setCalculatedMetrics] = useState<Record<string, unknown>>({});
   const [metricFlags, setMetricFlags] = useState<MetricFlags>({} as MetricFlags);
   
-  console.log('🎯 ADVANCED CALCULATOR: Component mounted');
-  console.log('🎯 ADVANCED CALCULATOR: Analysis level = ADVANCED');
-  console.log('🎯 ADVANCED CALCULATOR: Property type =', propertyType);
   const [propertyData, setPropertyData] = useState<Partial<PropertyData>>({
     propertyType: propertyType as PropertyType
   });
 
   const packages = advancedPackages[propertyType] || [];
   const capitalizedType = propertyType.charAt(0).toUpperCase() + propertyType.slice(1).replace('-', ' ');
-  
-  console.log('🎯 ADVANCED ANALYZER: Property type:', propertyType);
-  console.log('🎯 ADVANCED ANALYZER: Available packages:', packages.map(p => ({ id: p.id, name: p.name, hasRequiredFields: !!p.requiredFields })));
-  console.log('🎯 ADVANCED ANALYZER: First package field structure:', packages[0]?.requiredFields);
-  
-  console.log('🎯 ADVANCED CALCULATOR: Available packages:', packages.map(p => ({ id: p.id, name: p.name })));
-  console.log('🎯 ADVANCED CALCULATOR: Total packages for', propertyType, ':', packages.length);
 
   const handlePackageSelect = (packageId: string) => {
-    console.log('🎯 ADVANCED CALCULATOR: User selected package:', packageId);
     const selectedPkg = packages.find(p => p.id === packageId);
     if (selectedPkg) {
-      console.log('🎯 ADVANCED CALCULATOR: Package metrics:', selectedPkg.includedMetrics);
-      console.log('🎯 ADVANCED CALCULATOR: Package required fields:', selectedPkg.requiredFields);
       
       // Auto-select package metrics
       const packageFlags: MetricFlags = {} as MetricFlags;
@@ -54,7 +38,6 @@ export default function AdvancedAnalysisPropertyPage() {
         packageFlags[metric] = true;
       });
       setMetricFlags(packageFlags);
-      console.log('🎯 ADVANCED CALCULATOR: Auto-selected metric flags:', packageFlags);
     }
     setSelectedPackage(packageId);
     setPropertyData(prev => ({ ...prev, propertyType: propertyType as PropertyType }));
@@ -100,18 +83,11 @@ export default function AdvancedAnalysisPropertyPage() {
       selectedPackageId: selectedPackage
     } as PropertyData;
     
-    console.log('🔥 CALCULATE: Starting calculation');
-    console.log('🔥 CALCULATE: Property data being submitted:', enhancedPropertyData);
-    console.log('🔥 CALCULATE: Tenants array:', enhancedPropertyData.tenants);
-    console.log('🔥 CALCULATE: Package ID:', selectedPackage);
-    console.log('🔥 CALCULATE: Metric flags:', metricFlags);
     
-    const metrics = calculateMetrics(enhancedPropertyData, metricFlags);
-    setCalculatedMetrics(metrics);
-    
-    console.log('🔥 CALCULATE: Final results received:', metrics);
-    console.log('🔥 CALCULATE: WALT value:', metrics.walt);
-    console.log('🔥 CALCULATE: Enhanced WALT value:', metrics.enhancedWALT);
+    // Navigate to results page with data
+    const dataParam = encodeURIComponent(JSON.stringify(enhancedPropertyData));
+    const flagsParam = encodeURIComponent(JSON.stringify(metricFlags));
+    router.push(`/analyzer/${propertyType}/results?data=${dataParam}&flags=${flagsParam}`);
   };
 
   const getPackageIcon = (packageName: string) => {
@@ -268,45 +244,29 @@ export default function AdvancedAnalysisPropertyPage() {
           </h1>
         </div>
 
-        <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
+        <div className="max-w-3xl mx-auto">
           {/* Input Form */}
-          <div className="xl:col-span-1">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 sticky top-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Property Data</h2>
-              <EnhancedDynamicInputForm
-                requiredFields={selectedPackageData.requiredFields}
-                optionalFields={selectedPackageData.optionalFields}
-                data={propertyData as PropertyData}
-                onChange={handleDataChange}
-                packageType={selectedPackage}
-              />
-              
-              {/* Calculate Button */}
-              <div className="mt-6 pt-6 border-t">
-                <button
-                  onClick={handleCalculate}
-                  className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-semibold"
-                >
-                  Calculate {selectedPackageData.name}
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Results */}
-          <div className="xl:col-span-2">
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Advanced Analysis Results</h2>
-              <EnhancedMetricsDisplay 
-                metrics={calculatedMetrics}
-                flags={metricFlags}
-              />
-              
-              {Object.keys(calculatedMetrics).length === 0 && (
-                <div className="text-center py-12 text-gray-500">
-                  <p>Click &quot;Calculate&quot; to see your advanced analysis results</p>
-                </div>
-              )}
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">Property Data</h2>
+            <EnhancedDynamicInputForm
+              requiredFields={selectedPackageData.requiredFields}
+              optionalFields={selectedPackageData.optionalFields as (keyof PropertyData)[] | undefined}
+              data={propertyData as PropertyData}
+              onChange={handleDataChange}
+              packageType={selectedPackage}
+            />
+            
+            {/* Calculate Button */}
+            <div className="mt-6 pt-6 border-t">
+              <button
+                onClick={handleCalculate}
+                className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-semibold"
+              >
+                Calculate {selectedPackageData.name}
+              </button>
+              <p className="text-sm text-gray-500 mt-3 text-center">
+                You&apos;ll be redirected to a comprehensive results dashboard
+              </p>
             </div>
           </div>
         </div>

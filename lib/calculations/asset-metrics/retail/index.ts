@@ -159,7 +159,10 @@ export function analyzeSalesPerformance(
     if (!tenantSalesMap.has(sale.tenant)) {
       tenantSalesMap.set(sale.tenant, []);
     }
-    tenantSalesMap.get(sale.tenant)!.push(sale.netSales);
+    const tenantSales = tenantSalesMap.get(sale.tenant);
+    if (tenantSales) {
+      tenantSales.push(sale.netSales);
+    }
   });
   
   // Calculate center-wide metrics
@@ -299,7 +302,7 @@ export function analyzeSalesPerformance(
   // Seasonal pattern (simplified - would need actual date data)
   const seasonalPattern = Array.from({ length: 12 }, (_, i) => ({
     month: new Date(2024, i, 1).toLocaleString('default', { month: 'short' }),
-    index: monthlySales.get(i + 1) ? (monthlySales.get(i + 1)! / (totalCurrentSales / 12)) * 100 : 100
+    index: monthlySales.get(i + 1) ? ((monthlySales.get(i + 1) || 0) / (totalCurrentSales / 12)) * 100 : 100
   }));
   
   // Benchmark comparison
@@ -408,7 +411,7 @@ export function analyzeCoTenancy(
           coTenancyTriggers.push({
             tenant: tenant.tenantName,
             triggerTenant: missing,
-            remedy: tenant.coTenancy!.remedy,
+            remedy: tenant.coTenancy?.remedy || 'Unknown',
             probability: 0.8 // High probability since tenant is already missing
           });
         });
@@ -426,7 +429,7 @@ export function analyzeCoTenancy(
               coTenancyTriggers.push({
                 tenant: tenant.tenantName,
                 triggerTenant: required,
-                remedy: tenant.coTenancy!.remedy,
+                remedy: tenant.coTenancy?.remedy || 'Unknown',
                 probability
               });
               
@@ -476,8 +479,12 @@ export function analyzeCoTenancy(
   
   // Critical mass analysis
   const essentialTenants = tenants.filter(t => 
-    t.essentialService || t.category === 'Anchor' || t.salesPSF! > 500
+    t.essentialService || t.category === 'Anchor' || (t.salesPSF || 0) > 500
   );
+  
+  // Essential tenant assessment
+  const essentialTenantSF = essentialTenants.reduce((sum, t) => sum + (t.leasedSF || 0), 0);
+  const essentialTenantPercentage = (essentialTenantSF / totalGLA) * 100;
   
   // Minimum occupancy varies by center type
   const minimumOccupancy = totalGLA > 500000 ? 85 : 
@@ -503,7 +510,10 @@ export function analyzeCoTenancy(
     if (!merchandiseGroups.has(tenant.merchandiseType)) {
       merchandiseGroups.set(tenant.merchandiseType, []);
     }
-    merchandiseGroups.get(tenant.merchandiseType)!.push(tenant);
+    const group = merchandiseGroups.get(tenant.merchandiseType);
+    if (group) {
+      group.push(tenant);
+    }
   });
   
   const tenantSynergies = Array.from(merchandiseGroups.entries())
@@ -539,7 +549,9 @@ export function analyzeCoTenancy(
       currentStatus: criticalMassStatus,
       minimumOccupancy,
       cushion: Number(cushion.toFixed(2)),
-      vulnerableTenants
+      vulnerableTenants,
+      essentialTenants: essentialTenants.map(t => t.tenantName),
+      essentialTenantPercentage: Number(essentialTenantPercentage.toFixed(2))
     },
     tenantSynergies
   };
@@ -855,7 +867,8 @@ export function analyzePercentageRent(
   const optimizationOpportunities = tenantAnalysis
     .filter(t => t.optimization !== 'Optimal')
     .map(analysis => {
-      const tenant = tenants.find(t => t.tenantName === analysis.tenant)!;
+      const tenant = tenants.find(t => t.tenantName === analysis.tenant);
+      if (!tenant) return null;
       let recommendedStructure = '';
       let estimatedIncrease = 0;
       
@@ -890,6 +903,7 @@ export function analyzePercentageRent(
         estimatedIncrease
       };
     })
+    .filter((o): o is NonNullable<typeof o> => o !== null)
     .filter(o => o.estimatedIncrease > 0)
     .sort((a, b) => b.estimatedIncrease - a.estimatedIncrease);
   
@@ -899,7 +913,10 @@ export function analyzePercentageRent(
     if (!categoryGroups.has(tenant.merchandiseType)) {
       categoryGroups.set(tenant.merchandiseType, []);
     }
-    categoryGroups.get(tenant.merchandiseType)!.push(tenant);
+    const categoryGroup = categoryGroups.get(tenant.merchandiseType);
+    if (categoryGroup) {
+      categoryGroup.push(tenant);
+    }
   });
   
   const marketComparison = Array.from(categoryGroups.entries()).map(([category, group]) => {
@@ -913,7 +930,8 @@ export function analyzePercentageRent(
       category,
       marketRate: marketRates.rate,
       averageBreakpoint: marketRates.breakpoint,
-      ourAverage: Number(ourAverage.toFixed(2))
+      ourAverage: Number(ourAverage.toFixed(2)),
+      ourAverageBreakpoint: Number(avgBreakpoint.toFixed(0))
     };
   });
   

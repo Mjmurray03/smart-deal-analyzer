@@ -4,9 +4,6 @@ import { ArrowRightIcon, BuildingOfficeIcon, BuildingStorefrontIcon, BuildingOff
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 
 export default function QuickAnalysisPage() {
-  console.log('🚀 QUICK PATH: Quick Analysis property selection page mounted');
-  console.log('🚀 QUICK PATH: Analysis level = QUICK');
-  
   const propertyTypes = [
     {
       id: 'office',
@@ -100,8 +97,6 @@ export default function QuickAnalysisPage() {
               href={`/analyzer/quick/${type.id}`}
               className={`p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 ${getColorClasses(type.color)}`}
               onClick={() => {
-                console.log(`🚀 QUICK PATH: User selected property type: ${type.id}`);
-                console.log(`🚀 QUICK PATH: Navigating to /analyzer/quick/${type.id}`);
               }}
             >
               <div className="flex items-center mb-3">

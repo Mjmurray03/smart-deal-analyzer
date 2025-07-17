@@ -1,7 +1,7 @@
 // lib/calculations/packages/office-packages-enhanced.ts
 // Enhanced office property calculation packages with complex field definitions
 
-import { EnhancedCalculationPackage, FieldDefinition, FieldDefinitionFactory } from './enhanced-package-types';
+import { EnhancedCalculationPackage, FieldDefinitionFactory } from './enhanced-package-types';
 
 export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
   // 1. Enhanced WALT Analysis

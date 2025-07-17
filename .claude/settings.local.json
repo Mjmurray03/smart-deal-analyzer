@@ -28,7 +28,15 @@
       "Bash(done)",
       "Bash(do sed -i '1,2d' \"$file\")",
       "Bash(git remote set-url:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(git push:*)",
+      "mcp__ide__getDiagnostics",
+      "mcp__ide__executeCode",
+      "Bash(npm run:*)",
+      "Bash(mkdir:*)",
+      "Bash(npx next:*)"
     ],
     "deny": []
   }

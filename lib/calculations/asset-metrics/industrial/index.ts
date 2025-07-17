@@ -2,8 +2,18 @@
 // Comprehensive industrial property analytics for institutional investors
 
 // Types are defined locally to avoid unused imports
+import type { PropertyRequirements as BasePropertyRequirements } from '../../types';
 
 // ==================== TYPE DEFINITIONS ====================
+
+export interface PropertyRequirements extends BasePropertyRequirements {
+  idealPowerPerSF?: number;
+  minPowerPerSF?: number;
+  idealDockRatio?: number;
+  minDockRatio?: number;
+  idealClearHeight?: number;
+  minClearHeight?: number;
+}
 
 export interface IndustrialTenant {
   // Basic Information
@@ -174,18 +184,18 @@ export function analyzeBuildingFunctionality(
   
   // Clear height scoring
   let clearHeightScore = 0;
-  if (specs.clearHeight >= typeRequirements.idealClearHeight) {
+  if (typeRequirements && specs.clearHeight >= (typeRequirements.idealClearHeight || 0)) {
     clearHeightScore = 100;
-  } else if (specs.clearHeight >= typeRequirements.minClearHeight) {
-    clearHeightScore = 50 + ((specs.clearHeight - typeRequirements.minClearHeight) / 
-                            (typeRequirements.idealClearHeight - typeRequirements.minClearHeight)) * 50;
-  } else {
+  } else if (typeRequirements && specs.clearHeight >= (typeRequirements.minClearHeight || 0)) {
+    clearHeightScore = 50 + ((specs.clearHeight - (typeRequirements.minClearHeight || 0)) / 
+                            ((typeRequirements.idealClearHeight || 0) - (typeRequirements.minClearHeight || 0))) * 50;
+  } else if (typeRequirements && typeRequirements.minClearHeight) {
     clearHeightScore = (specs.clearHeight / typeRequirements.minClearHeight) * 50;
   }
   
   // Loading scoring
   let loadingScore = 0;
-  const idealDockRatio = typeRequirements.idealDockRatio;
+  const idealDockRatio = typeRequirements?.idealDockRatio || 1;
   if (dockDoorRatio >= idealDockRatio) {
     loadingScore = 100;
   } else {
@@ -206,19 +216,19 @@ export function analyzeBuildingFunctionality(
   // Power scoring
   let powerScore = 0;
   const powerPerSF = specs.powerCapacity * 1000 / specs.totalSF; // Watts per SF
-  if (powerPerSF >= typeRequirements.idealPowerPerSF) {
+  if (typeRequirements && powerPerSF >= (typeRequirements.idealPowerPerSF || 0)) {
     powerScore = 100;
-  } else if (powerPerSF >= typeRequirements.minPowerPerSF) {
-    powerScore = 50 + ((powerPerSF - typeRequirements.minPowerPerSF) / 
-                       (typeRequirements.idealPowerPerSF - typeRequirements.minPowerPerSF)) * 50;
-  } else {
+  } else if (typeRequirements && powerPerSF >= (typeRequirements.minPowerPerSF || 0)) {
+    powerScore = 50 + ((powerPerSF - (typeRequirements.minPowerPerSF || 0)) / 
+                       ((typeRequirements.idealPowerPerSF || 0) - (typeRequirements.minPowerPerSF || 0))) * 50;
+  } else if (typeRequirements && typeRequirements.minPowerPerSF) {
     powerScore = (powerPerSF / typeRequirements.minPowerPerSF) * 50;
   }
   
   // Layout scoring
   let layoutScore = 70; // Base score
   const [columnWidth, columnDepth] = specs.columnSpacing.split('x').map(Number);
-  const columnArea = columnWidth * columnDepth;
+  const columnArea = (columnWidth || 0) * (columnDepth || 0);
   
   if (columnArea >= 3000) layoutScore += 20;
   else if (columnArea >= 2000) layoutScore += 10;
@@ -329,7 +339,7 @@ export function analyzeBuildingFunctionality(
   // Modernization needs
   const modernizationNeeds = [];
   
-  if (specs.clearHeight < typeRequirements.minClearHeight) {
+  if (typeRequirements && specs.clearHeight < (typeRequirements.minClearHeight || 0)) {
     modernizationNeeds.push({
       item: 'Raise roof/clear height',
       cost: specs.totalSF * 25,
@@ -354,7 +364,7 @@ export function analyzeBuildingFunctionality(
     });
   }
   
-  if (powerPerSF < typeRequirements.minPowerPerSF) {
+  if (typeRequirements && powerPerSF < (typeRequirements.minPowerPerSF || 0)) {
     modernizationNeeds.push({
       item: 'Electrical service upgrade',
       cost: specs.totalSF * 5,
@@ -446,11 +456,21 @@ export function analyzeLocationLogistics(
   // Transportation scoring
   let transportationScore = 50; // Base
   
+  // Adjust scoring based on property type requirements
+  const isLastMile = propertyType.toLowerCase().includes('last mile');
+  const isDistribution = propertyType.toLowerCase().includes('warehouse') || propertyType.toLowerCase().includes('distribution');
+  const isManufacturing = propertyType.toLowerCase().includes('manufacturing');
+  
   // Highway access is critical
   if (location.distanceToHighway <= 1) transportationScore += 30;
   else if (location.distanceToHighway <= 3) transportationScore += 20;
   else if (location.distanceToHighway <= 5) transportationScore += 10;
   else transportationScore -= 10;
+  
+  // Property type specific adjustments
+  if (isLastMile && location.distanceToHighway <= 0.5) transportationScore += 10; // Last mile needs ultra-close highway access
+  if (isDistribution && location.distanceToPort && location.distanceToPort <= 50) transportationScore += 15; // Distribution benefits from port access
+  if (isManufacturing && location.distanceToRail && location.distanceToRail <= 2) transportationScore += 20; // Manufacturing benefits from rail
   
   // Additional transportation modes
   if (location.distanceToPort && location.distanceToPort <= 25) transportationScore += 10;
@@ -1096,7 +1116,7 @@ idealPowerPerSF: 3
 }
 };
 
-return requirements[propertyType] || requirements['Warehouse'];
+return requirements[propertyType] || requirements['Warehouse'] || null;
 }
 
 function calculateColumnEfficiency(width: number, depth: number, totalSF: number): number {

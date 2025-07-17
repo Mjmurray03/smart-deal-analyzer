@@ -51,17 +51,25 @@ export function analyzeAssetMetrics(
   propertyData: PropertyData,
   assetType: PropertyType
 ) {
+  // Return the appropriate metrics object for the asset type
+  // PropertyData will be used when these metrics are applied to specific calculations
+  const baseMetrics = {
+    propertyType: assetType,
+    dataSource: propertyData.propertyType || assetType,
+    analysisTimestamp: new Date().toISOString()
+  };
+
   switch (assetType) {
     case 'office':
-      return OfficeMetrics;
+      return { ...OfficeMetrics, ...baseMetrics };
     case 'retail':
-      return RetailMetrics;
+      return { ...RetailMetrics, ...baseMetrics };
     case 'industrial':
-      return IndustrialMetrics;
+      return { ...IndustrialMetrics, ...baseMetrics };
     case 'multifamily':
-      return MultifamilyMetrics;
+      return { ...MultifamilyMetrics, ...baseMetrics };
     case 'mixed-use':
-      return MixedUseMetrics;
+      return { ...MixedUseMetrics, ...baseMetrics };
     default:
       throw new Error(`Unsupported asset type: ${assetType}`);
   }

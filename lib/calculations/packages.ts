@@ -28,7 +28,7 @@ export const quickPackages: Record<string, CalculationPackage[]> = {
       id: 'office-quick-lease',
       name: 'Quick Lease Analysis',
       description: 'Lease-focused analysis for office properties',
-      includedMetrics: ['effectiveRentPSF'] as (keyof MetricFlags)[],
+      includedMetrics: ['effectiveRentPSF' as keyof MetricFlags],
       requiredFields: ['averageRentPSF', 'operatingExpenses'] as (keyof PropertyData)[]
     },
     {
@@ -88,7 +88,7 @@ export const quickPackages: Record<string, CalculationPackage[]> = {
       id: 'industrial-quick-rent',
       name: 'Quick Rent Analysis',
       description: 'Effective rent analysis for industrial properties',
-      includedMetrics: ['effectiveRentPSF'] as (keyof MetricFlags)[],
+      includedMetrics: ['effectiveRentPSF' as keyof MetricFlags],
       requiredFields: ['averageRentPSF', 'operatingExpenses'] as (keyof PropertyData)[]
     },
     {
@@ -164,11 +164,11 @@ export const quickPackages: Record<string, CalculationPackage[]> = {
 
 // Advanced packages for comprehensive institutional analysis - ENHANCED 28 PACKAGES
 export const advancedPackages: Record<string, CalculationPackage[]> = {
-  office: enhancedOfficePackages,
-  retail: enhancedRetailPackages,
-  industrial: enhancedIndustrialPackages,
-  multifamily: enhancedMultifamilyPackages,
-  'mixed-use': enhancedMixedUsePackages
+  office: enhancedOfficePackages as unknown as CalculationPackage[],
+  retail: enhancedRetailPackages as unknown as CalculationPackage[],
+  industrial: enhancedIndustrialPackages as unknown as CalculationPackage[],
+  multifamily: enhancedMultifamilyPackages as unknown as CalculationPackage[],
+  'mixed-use': enhancedMixedUsePackages as unknown as CalculationPackage[]
 };
 
 // Legacy packages for backward compatibility
@@ -754,7 +754,7 @@ export function getRequiredFields(
   // Add fields required by selected metrics
   metrics.forEach(metric => {
     const metricInfo = allMetrics[metric as keyof typeof allMetrics];
-    if (metricInfo) {
+    if (metricInfo && 'requiredFields' in metricInfo) {
       metricInfo.requiredFields.forEach((field: keyof PropertyData) => requiredFields.add(field));
     }
   });
@@ -1109,15 +1109,6 @@ export const fieldMetadata: Partial<Record<keyof PropertyData, {
     min: 0,
     step: 100,
     helperText: 'Total rentable square footage of the office building'
-  },
-  noi: {
-    label: 'NOI',
-    category: 'financial',
-    type: 'number',
-    prefix: '$',
-    min: 0,
-    step: 1000,
-    helperText: 'Net Operating Income'
   },
   grossLeasableArea: {
     label: 'Gross Leasable Area',

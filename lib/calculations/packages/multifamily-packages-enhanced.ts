@@ -1,7 +1,7 @@
 // lib/calculations/packages/multifamily-packages-enhanced.ts
 // Enhanced multifamily property calculation packages with complex field definitions
 
-import { EnhancedCalculationPackage, FieldDefinition, FieldDefinitionFactory } from './enhanced-package-types';
+import { EnhancedCalculationPackage, FieldDefinitionFactory } from './enhanced-package-types';
 
 export const enhancedMultifamilyPackages: EnhancedCalculationPackage[] = [
   // 21. Revenue & Rent Roll Analysis

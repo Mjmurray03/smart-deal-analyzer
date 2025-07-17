@@ -429,7 +429,7 @@ export const components = {
 
 // ==================== UTILITY FUNCTIONS ====================
 
-export const utils = {
+export const tokenUtils = {
   // Get color with opacity
   withOpacity: (color: string, opacity: number) => 
     `${color}${Math.round(opacity * 255).toString(16).padStart(2, '0')}`,

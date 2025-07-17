@@ -1,7 +1,7 @@
 // lib/calculations/packages/industrial-packages-enhanced.ts
 // Enhanced industrial property calculation packages with complex field definitions
 
-import { EnhancedCalculationPackage, FieldDefinition, FieldDefinitionFactory } from './enhanced-package-types';
+import { EnhancedCalculationPackage, FieldDefinitionFactory } from './enhanced-package-types';
 
 export const enhancedIndustrialPackages: EnhancedCalculationPackage[] = [
   // 17. Building Functionality & Efficiency

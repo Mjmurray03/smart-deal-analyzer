@@ -5,7 +5,7 @@
  * Built on top of design tokens with proper TypeScript support
  */
 
-import { components as tokens } from './tokens';
+import { components as _tokens } from './tokens';
 import type { Mode, MetricStatus } from './tokens';
 
 // ==================== BASE COMPONENT CLASSES ====================
@@ -457,7 +457,7 @@ export const feedback = {
 
 export const utils = {
   // Get component variant based on mode
-  getVariant: (component: keyof typeof button.variants | keyof typeof card.variants | keyof typeof input.variants, mode: Mode, variant: string) => {
+  getVariant: (component: 'button' | 'card' | 'input', mode: Mode, variant: string) => {
     const componentVariants = component === 'button' ? button.variants : 
                             component === 'card' ? card.variants : 
                             input.variants;

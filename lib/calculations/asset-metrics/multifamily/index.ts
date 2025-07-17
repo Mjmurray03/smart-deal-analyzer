@@ -205,7 +205,7 @@ export function analyzeRevenuePerformance(
   const concessionTotal = occupiedUnits
     .filter(u => u.concessions)
     .reduce((sum, u) => {
-      const monthly = u.concessions!.amount / u.concessions!.months;
+      const monthly = (u.concessions?.amount || 0) / (u.concessions?.months || 1);
       return sum + monthly * 12;
     }, 0);
   
@@ -275,7 +275,7 @@ export function analyzeRevenuePerformance(
   const unitsWithConcessions = occupiedUnits.filter(u => u.concessions).length;
   const totalConcessionValue = occupiedUnits
     .filter(u => u.concessions)
-    .reduce((sum, u) => sum + u.concessions!.amount, 0);
+    .reduce((sum, u) => sum + (u.concessions?.amount || 0), 0);
   const avgConcessionValue = unitsWithConcessions > 0 ? 
     totalConcessionValue / unitsWithConcessions : 0;
   const concessionRate = (unitsWithConcessions / occupiedUnits.length) * 100;
@@ -793,7 +793,7 @@ export function analyzeMarketPosition(
   ];
   
   const amenityGapAnalysis = amenityChecklist.map(amenity => {
-    const hasAmenity = Boolean((property.amenities as unknown as Record<string, unknown>)[amenity.key]);
+    const hasAmenity = Boolean((property.amenities as Record<string, unknown>)?.[amenity.key]);
     const marketAdoption = marketComps.filter(c => {
       // Simplified - would need actual amenity data for comps
       return c.amenityScore > 70; // Assume high-scoring comps have it
@@ -1000,7 +1000,8 @@ export function analyzeValueAddPotential(
   });
   
   // Phased approach (using Premium scenario)
-  const premiumScenario = renovationROI.find(r => r.scenario === 'Premium')!;
+  const premiumScenario = renovationROI.find(r => r.scenario === 'Premium');
+  if (!premiumScenario) return { error: 'Premium scenario not found' };
   const unitsPerPhase = Math.ceil(unRenovatedUnits.length / 3);
   
   const phasedApproach = [1, 2, 3].map(phase => {
@@ -1142,7 +1143,7 @@ function calculateAmenityScore(amenities: PropertyAmenities): number {
   };
   
   Object.entries(weights).forEach(([amenity, weight]) => {
-    if ((amenities as unknown as Record<string, unknown>)[amenity]) {
+    if ((amenities as Record<string, unknown>)?.[amenity]) {
       score += weight;
     }
   });

@@ -1,7 +1,7 @@
 // lib/calculations/packages/retail-packages-enhanced.ts
 // Enhanced retail property calculation packages with complex field definitions
 
-import { EnhancedCalculationPackage, FieldDefinition, FieldDefinitionFactory } from './enhanced-package-types';
+import { EnhancedCalculationPackage, FieldDefinitionFactory } from './enhanced-package-types';
 
 export const enhancedRetailPackages: EnhancedCalculationPackage[] = [
   // 11. Sales Performance & Productivity

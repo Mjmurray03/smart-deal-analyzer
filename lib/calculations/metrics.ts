@@ -1,6 +1,21 @@
 // Internal imports - absolute paths
-import { PropertyData, MetricFlags, CalculatedMetrics, DealAssessment, AssessmentLevel, RetailTenant } from './types';
+import type { PropertyData, MetricFlags, CalculatedMetrics, DealAssessment } from '../types';
+import type { RetailTenant, AssessmentLevel } from './types';
 import { SimpleTenant } from '../types';
+import { 
+  isValidNumber, 
+  safeDivide, 
+  safeMultiply, 
+  calculateCapRate as helperCalculateCapRate, 
+  calculateCashOnCash as helperCalculateCashOnCash, 
+  calculateDSCR as helperCalculateDSCR, 
+  calculateLTV as helperCalculateLTV, 
+  calculateGRM as helperCalculateGRM, 
+  calculatePricePerSF as helperCalculatePricePerSF, 
+  calculatePricePerUnit as helperCalculatePricePerUnit,
+  shouldCalculateMetric,
+  setMetricValue
+} from './calculation-helpers';
 import { getAssetCalculationFunctions, validateAssetDataRequirements } from './asset-metrics';
 
 // Asset-specific calculation functions - organized by property type
@@ -18,12 +33,8 @@ import {
   analyzeSalesPerformance,
   analyzeCoTenancy,
   analyzeTradeArea,
-  analyzePercentageRent,
-  analyzeExpenseRecovery,
-  analyzeRedevelopmentPotential,
   RetailTenant as RetailTenantType,
-  SalesData,
-  TradeArea
+  SalesData
 } from './asset-metrics/retail';
 
 import {
@@ -39,8 +50,6 @@ import {
 import {
   analyzeRevenuePerformance,
   analyzeOperatingPerformance,
-  analyzeMarketPosition,
-  analyzeValueAddPotential,
   Unit,
   PropertyAmenities,
   MarketComps
@@ -48,9 +57,6 @@ import {
 
 import {
   analyzeMixedUsePerformance,
-  analyzeCrossUseInteractions,
-  analyzeOperationalIntegration,
-  analyzeMixedUseDevelopment,
   MixedUseComponent,
   SharedSystems
 } from './asset-metrics/mixed-use';
@@ -288,12 +294,12 @@ export function calculateMetrics(
   if (flags.capRate) {
     try {
       if (hasRequiredDataForMetric('capRate', data)) {
-        metrics.capRate = (data.currentNOI! / data.purchasePrice!) * 100;
-        console.log(`✅ METRICS: Cap Rate calculated: ${metrics.capRate.toFixed(2)}%`);
+        metrics.capRate = ((data.currentNOI || 0) / (data.purchasePrice || 1)) * 100;
+        // Cap Rate calculation successful
       } else {
         const error = getMetricValidationError('capRate', data);
-        validationErrors.capRate = error!;
-        console.log(`❌ METRICS: Cap Rate calculation failed - ${error}`);
+        validationErrors.capRate = error || 'Validation error';
+        // Cap Rate calculation failed - missing required data
       }
     } catch (error) {
       console.error('Error calculating Cap Rate:', error);
@@ -306,12 +312,12 @@ export function calculateMetrics(
   if (flags.cashOnCash) {
     try {
       if (hasRequiredDataForMetric('cashOnCash', data)) {
-        metrics.cashOnCash = (data.annualCashFlow! / data.totalInvestment!) * 100;
-        console.log(`✅ METRICS: Cash-on-Cash Return calculated: ${metrics.cashOnCash.toFixed(2)}%`);
+        metrics.cashOnCash = ((data.annualCashFlow || 0) / (data.totalInvestment || 1)) * 100;
+        // Cash-on-Cash Return calculation successful
       } else {
         const error = getMetricValidationError('cashOnCash', data);
-        validationErrors.cashOnCash = error!;
-        console.log(`❌ METRICS: Cash-on-Cash Return calculation failed - ${error}`);
+        validationErrors.cashOnCash = error || 'Validation error';
+        // Cash-on-Cash Return calculation failed - missing required data
       }
     } catch (error) {
       console.error('Error calculating Cash-on-Cash Return:', error);
@@ -324,24 +330,22 @@ export function calculateMetrics(
   if (flags.dscr) {
     try {
       if (hasRequiredDataForMetric('dscr', data)) {
-        const monthlyRate = data.interestRate! / 100 / 12;
-        const numPayments = data.loanTerm! * 12;
+        const monthlyRate = (data.interestRate || 0) / 100 / 12;
+        const numPayments = (data.loanTerm || 0) * 12;
         
         if (monthlyRate > 0) {
-          const monthlyPayment = data.loanAmount! * 
+          const monthlyPayment = (data.loanAmount || 0) * 
             (monthlyRate * Math.pow(1 + monthlyRate, numPayments)) /
             (Math.pow(1 + monthlyRate, numPayments) - 1);
           const annualDebtService = monthlyPayment * 12;
           
           if (annualDebtService > 0) {
-            metrics.dscr = data.currentNOI! / annualDebtService;
-            console.log(`✅ METRICS: DSCR calculated: ${metrics.dscr.toFixed(2)}`);
+            metrics.dscr = (data.currentNOI || 0) / annualDebtService;
           }
         }
       } else {
         const error = getMetricValidationError('dscr', data);
-        validationErrors.dscr = error!;
-        console.log(`❌ METRICS: DSCR calculation failed - ${error}`);
+        validationErrors.dscr = error || 'Validation error';
       }
     } catch (error) {
       console.error('Error calculating DSCR:', error);
@@ -354,12 +358,10 @@ export function calculateMetrics(
   if (flags.ltv) {
     try {
       if (hasRequiredDataForMetric('ltv', data)) {
-        metrics.ltv = (data.loanAmount! / data.purchasePrice!) * 100;
-        console.log(`✅ METRICS: LTV calculated: ${metrics.ltv.toFixed(2)}%`);
+        metrics.ltv = ((data.loanAmount || 0) / (data.purchasePrice || 1)) * 100;
       } else {
         const error = getMetricValidationError('ltv', data);
-        validationErrors.ltv = error!;
-        console.log(`❌ METRICS: LTV calculation failed - ${error}`);
+        validationErrors.ltv = error || 'Validation error';
       }
     } catch (error) {
       console.error('Error calculating LTV:', error);
@@ -372,24 +374,20 @@ export function calculateMetrics(
   if (flags.pricePerSF) {
     if (hasRequiredDataForMetric('pricePerSF', data)) {
       const sf = data.squareFootage || data.totalSF || data.grossLeasableArea || 0;
-      metrics.pricePerSF = data.purchasePrice! / sf;
-      console.log(`✅ METRICS: Price per SF calculated: $${metrics.pricePerSF.toFixed(2)}/SF`);
+      metrics.pricePerSF = (data.purchasePrice || 0) / sf;
     } else {
       const error = getMetricValidationError('pricePerSF', data);
-      validationErrors.pricePerSF = error!;
-      console.log(`❌ METRICS: Price per SF calculation failed - ${error}`);
+      validationErrors.pricePerSF = error || 'Validation error';
     }
   }
 
   // GRM = Purchase Price / Gross Income
   if (flags.grm) {
     if (hasRequiredDataForMetric('grm', data)) {
-      metrics.grm = data.purchasePrice! / data.grossIncome!;
-      console.log(`✅ METRICS: GRM calculated: ${metrics.grm.toFixed(2)}`);
+      metrics.grm = (data.purchasePrice || 0) / (data.grossIncome || 1);
     } else {
       const error = getMetricValidationError('grm', data);
-      validationErrors.grm = error!;
-      console.log(`❌ METRICS: GRM calculation failed - ${error}`);
+      validationErrors.grm = error || 'Validation error';
     }
   }
 
@@ -397,13 +395,11 @@ export function calculateMetrics(
   if (flags.effectiveRentPSF) {
     if (hasRequiredDataForMetric('effectiveRentPSF', data)) {
       const sf = data.squareFootage || data.totalSF || data.grossLeasableArea || 1;
-      const opExpensesPSF = data.operatingExpenses! / sf;
-      metrics.effectiveRentPSF = data.averageRentPSF! - opExpensesPSF;
-      console.log(`✅ METRICS: Effective Rent per SF calculated: $${metrics.effectiveRentPSF.toFixed(2)}/SF`);
+      const opExpensesPSF = (data.operatingExpenses || 0) / sf;
+      metrics.effectiveRentPSF = (data.averageRentPSF || 0) - opExpensesPSF;
     } else {
       const error = getMetricValidationError('effectiveRentPSF', data);
-      validationErrors.effectiveRentPSF = error!;
-      console.log(`❌ METRICS: Effective Rent per SF calculation failed - ${error}`);
+      validationErrors.effectiveRentPSF = error || 'Validation error';
     }
   }
 
@@ -472,22 +468,22 @@ export function calculateMetrics(
         if (data.propertyType === 'office') {
           if (flags.tenantFinancialHealth && assetFunctions.analyzeTenantFinancialHealth) {
             assetAnalysisResults.tenantFinancialHealth = assetFunctions.analyzeTenantFinancialHealth(
-              data.officeTenants?.tenants || [],
-              {} // market data placeholder
+              (data.officeTenants?.tenants || []) as OfficeTenant[],
+              {} as MarketIntelligence
             );
           }
           
           if (flags.leaseValuation && assetFunctions.analyzeLeaseEconomics) {
             assetAnalysisResults.leaseEconomics = assetFunctions.analyzeLeaseEconomics(
-              data.officeTenants?.tenants || [],
-              {} // market data placeholder
+              (data.officeTenants?.tenants || []) as OfficeTenant[],
+              {} as MarketIntelligence
             );
           }
           
           if (flags.operationalEfficiency && assetFunctions.analyzeBuildingOperations) {
             assetAnalysisResults.buildingOperations = assetFunctions.analyzeBuildingOperations(
-              {}, // building operations placeholder
-              data.officeTenants?.tenants || [],
+              {} as BuildingOperations,
+              (data.officeTenants?.tenants || []) as OfficeTenant[],
               20, // property age placeholder
               data.rentableSquareFeet || 0
             );
@@ -496,14 +492,14 @@ export function calculateMetrics(
           if (flags.marketPositioning && assetFunctions.analyzeMarketPositioning) {
             assetAnalysisResults.marketPositioning = assetFunctions.analyzeMarketPositioning(
               {
-                tenants: data.officeTenants?.tenants || [],
-                building: {}, // building ops placeholder
+                tenants: (data.officeTenants?.tenants || []) as OfficeTenant[],
+                building: {} as BuildingOperations,
                 totalSF: data.rentableSquareFeet || 0,
                 occupancy: 90, // placeholder
                 avgRent: data.averageRentPSF || 0,
                 parkingRatio: 3 // placeholder
               },
-              {} // market intelligence placeholder
+              {} as MarketIntelligence
             );
           }
         }
@@ -512,7 +508,7 @@ export function calculateMetrics(
         if (data.propertyType === 'retail') {
           if (flags.tenantHealth && assetFunctions.analyzeSalesPerformance) {
             assetAnalysisResults.salesPerformance = assetFunctions.analyzeSalesPerformance(
-              [], // sales data placeholder
+              [] as SalesData[],
               data.retailTenants || [],
               'Regional Mall' // center type placeholder
             );
@@ -546,8 +542,8 @@ export function calculateMetrics(
                 dockDoors: data.numberOfDockDoors || 0,
                 powerCapacity: data.powerCapacity || 0,
                 // other specs would be added here
-              } as any,
-              [], // tenants placeholder
+              } as BuildingSpecs,
+              [] as IndustrialTenant[],
               'Warehouse' // property type placeholder
             );
           }
@@ -557,9 +553,9 @@ export function calculateMetrics(
               {
                 distanceToHighway: data.distanceToHighway || 0,
                 // other location metrics would be added here
-              } as any,
+              } as LocationMetrics,
               'Warehouse', // property type placeholder
-              [] // tenants placeholder
+              [] as IndustrialTenant[]
             );
           }
         }
@@ -568,9 +564,9 @@ export function calculateMetrics(
         if (data.propertyType === 'multifamily') {
           if (flags.revenueMetrics && assetFunctions.analyzeRevenuePerformance) {
             assetAnalysisResults.revenuePerformance = assetFunctions.analyzeRevenuePerformance(
-              [], // units placeholder
-              [], // market comps placeholder
-              {}, // amenities placeholder
+              [] as Unit[],
+              [] as MarketComps[],
+              {} as PropertyAmenities,
               data.operatingExpenses || 0
             );
           }
@@ -578,8 +574,8 @@ export function calculateMetrics(
           if (flags.marketPosition && assetFunctions.analyzeMarketPosition) {
             assetAnalysisResults.marketPosition = assetFunctions.analyzeMarketPosition(
               {
-                units: [], // units placeholder
-                amenities: {}, // amenities placeholder
+                units: [] as Unit[],
+                amenities: {} as PropertyAmenities,
                 yearBuilt: 2000, // placeholder
                 location: {
                   walkScore: 70,
@@ -588,7 +584,7 @@ export function calculateMetrics(
                   crimeIndex: 30
                 }
               },
-              [], // market comps placeholder
+              [] as MarketComps[],
               {} // submarket data placeholder
             );
           }
@@ -610,95 +606,62 @@ export function calculateMetrics(
   // New "Wow" Metrics Calculations
   // Office: WALT calculation
   if (flags.walt && data.officeTenants?.tenants) {
-    console.log('Calculating WALT with tenants:', data.officeTenants.tenants);
     metrics.walt = calculateSimpleWALT(data.officeTenants.tenants);
-    console.log('WALT result:', metrics.walt);
   }
 
   // Office: Simple WALT calculation (for backward compatibility)
   if (flags.simpleWalt && data.officeTenants?.tenants) {
-    console.log('Calculating Simple WALT with tenants:', data.officeTenants.tenants);
     metrics.simpleWalt = calculateSimpleWALT(data.officeTenants.tenants);
-    console.log('Simple WALT result:', metrics.simpleWalt);
   }
 
   // Retail: Sales per SF analysis
   if (flags.salesPerSF && data.retailTenants) {
-    console.log('Calculating Sales per SF with tenants:', data.retailTenants);
     metrics.salesPerSF = calculateSalesPerSF(data.retailTenants);
-    console.log('Sales per SF result:', metrics.salesPerSF);
   }
 
   // Industrial: Clear height premium analysis
   if (flags.industrialMetrics && data.squareFootage && data.purchasePrice && data.clearHeight) {
-    console.log('Calculating Industrial Metrics with data:', {
-      squareFootage: data.squareFootage,
-      clearHeight: data.clearHeight,
-      purchasePrice: data.purchasePrice
-    });
     metrics.industrialMetrics = calculateIndustrialMetrics({
       squareFootage: data.squareFootage,
       clearHeight: data.clearHeight,
       purchasePrice: data.purchasePrice
     });
-    console.log('Industrial Metrics result:', metrics.industrialMetrics);
   }
 
   // Industrial: Clear height analysis (new metric)
   if (flags.clearHeightAnalysis && data.squareFootage && data.clearHeight && data.purchasePrice) {
-    console.log('Calculating Clear Height Analysis with data:', {
-      squareFootage: data.squareFootage,
-      clearHeight: data.clearHeight,
-      purchasePrice: data.purchasePrice
-    });
     metrics.clearHeightAnalysis = calculateIndustrialMetrics({
       squareFootage: data.squareFootage,
       clearHeight: data.clearHeight,
       purchasePrice: data.purchasePrice
     });
-    console.log('Clear Height Analysis result:', metrics.clearHeightAnalysis);
   }
 
   // Multifamily: Revenue per unit analysis (new metric)
   if (flags.revenuePerUnit && data.totalUnits && data.monthlyRentalIncome) {
-    console.log('Calculating Revenue per Unit with data:', {
-      totalUnits: data.totalUnits,
-      monthlyRentalIncome: data.monthlyRentalIncome,
-      marketAverageRent: data.marketAverageRent
-    });
     metrics.revenuePerUnit = calculateMultifamilyMetrics({
       totalUnits: data.totalUnits,
       monthlyRentalIncome: data.monthlyRentalIncome,
-      marketAverageRent: data.marketAverageRent
+      ...(data.marketAverageRent !== undefined && { marketAverageRent: data.marketAverageRent })
     });
-    console.log('Revenue per Unit result:', metrics.revenuePerUnit);
   }
 
   // Multifamily: Revenue per unit with market comparison
   if (flags.multifamilyMetrics && data.numberOfUnits && data.monthlyRentalIncome) {
-    console.log('Calculating Multifamily Metrics with data:', {
-      totalUnits: data.numberOfUnits,
-      monthlyRentalIncome: data.monthlyRentalIncome,
-      marketAverageRent: data.marketAverageRent
-    });
     metrics.multifamilyMetrics = calculateMultifamilyMetrics({
       totalUnits: data.numberOfUnits,
       monthlyRentalIncome: data.monthlyRentalIncome,
-      marketAverageRent: data.marketAverageRent
+      ...(data.marketAverageRent !== undefined && { marketAverageRent: data.marketAverageRent })
     });
-    console.log('Multifamily Metrics result:', metrics.multifamilyMetrics);
   }
 
   // PACKAGE-BASED ROUTING FOR ASSET-SPECIFIC CALCULATIONS
   if (data.selectedPackageId) {
-    console.log(`🎯 MAIN METRICS: Package-based calculation requested for: ${data.selectedPackageId}`);
     try {
       const packageResult = calculatePackageMetrics(data.selectedPackageId, data);
-      console.log(`🎯 MAIN METRICS: Package result:`, packageResult);
       if (packageResult) {
         // Merge package-specific results with basic metrics
         Object.assign(metrics, packageResult);
-        console.log(`🎯 MAIN METRICS: Merged metrics with package results`);
       }
     } catch (error) {
       console.error(`❌ MAIN METRICS: Error calculating package ${data.selectedPackageId}:`, error);
@@ -709,7 +672,6 @@ export function calculateMetrics(
   // Add validation errors to metrics result if any exist
   if (Object.keys(validationErrors).length > 0) {
     metrics.validationErrors = validationErrors;
-    console.log(`🔍 METRICS: Found ${Object.keys(validationErrors).length} validation errors:`, validationErrors);
   }
 
   return metrics;
@@ -725,7 +687,7 @@ function convertToOfficeTenants(tenantArray: any[]): OfficeTenant[] {
     parentCompany: t.parentCompany,
     industry: t.industry || 'Unknown',
     naicsCode: t.naicsCode || '000000',
-    creditRating: t.creditRating as any || 'NR',
+    creditRating: (t.creditRating as string) || 'NR',
     
     // Space Configuration
     suites: [{
@@ -734,7 +696,7 @@ function convertToOfficeTenants(tenantArray: any[]): OfficeTenant[] {
       rentableSF: t.rentableSF || t.rentableSquareFeet || t.squareFootage || 1000,
       usableSF: t.usableSF || t.rentableSquareFeet || t.squareFootage || 1000,
       loadFactor: t.loadFactor || 1.15,
-      configuration: t.configuration || 'Open' as any,
+      configuration: t.configuration || 'Open',
       privateOffices: t.privateOffices || 0,
       workstations: t.workstations || 10,
       conferenceRooms: t.conferenceRooms || 1,
@@ -752,7 +714,7 @@ function convertToOfficeTenants(tenantArray: any[]): OfficeTenant[] {
     
     // Lease Terms
     leaseID: t.leaseID || `lease-${Date.now()}`,
-    leaseType: t.leaseType || 'Direct' as any,
+    leaseType: t.leaseType || 'Direct',
     originalLeaseDate: new Date(t.originalLeaseDate || t.leaseStartDate || Date.now()),
     commencementDate: new Date(t.commencementDate || t.leaseStartDate || Date.now()),
     rentCommencementDate: new Date(t.rentCommencementDate || t.leaseStartDate || Date.now()),
@@ -767,9 +729,9 @@ function convertToOfficeTenants(tenantArray: any[]): OfficeTenant[] {
       rentPSF: t.baseRentPSF || t.rentPSF || 30
     }],
     escalations: {
-      type: t.escalationType || 'Fixed' as any,
+      type: t.escalationType || 'Fixed',
       amount: t.escalationAmount || 3,
-      frequency: t.escalationFrequency || 'Annual' as any,
+      frequency: t.escalationFrequency || 'Annual',
       compounded: t.escalationCompounded || false,
       nextEscalationDate: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000)
     },
@@ -777,18 +739,18 @@ function convertToOfficeTenants(tenantArray: any[]): OfficeTenant[] {
     // Concessions
     freeRent: {
       months: t.freeRentMonths || 0,
-      type: t.freeRentType || 'Net' as any,
-      period: t.freeRentPeriod || 'Upfront' as any
+      type: t.freeRentType || 'Net',
+      period: t.freeRentPeriod || 'Upfront'
     },
     tenantImprovement: {
       totalAllowance: t.tiAllowance || 0,
       psfAllowance: t.tiPSF || 0,
       standardsBuildout: t.standardsBuildout || false,
-      unused: t.unusedTI || 'Forfeit' as any
+      unused: t.unusedTI || 'Forfeit'
     },
     
     // Operating Expenses
-    expenseStructure: t.expenseStructure || 'Full Service' as any,
+    expenseStructure: t.expenseStructure || 'Full Service',
     baseYear: t.baseYear || new Date().getFullYear(),
     
     // Parking
@@ -796,14 +758,14 @@ function convertToOfficeTenants(tenantArray: any[]): OfficeTenant[] {
       includedSpaces: t.includedParking || 0,
       additionalSpaces: t.additionalParking || 0,
       monthlyRate: t.parkingRate || 0,
-      location: t.parkingLocation || 'Surface' as any,
+      location: t.parkingLocation || 'Surface',
       reserved: t.reservedParking || false
     },
     
     // Security
     securityDeposit: {
       amount: t.securityDeposit || 0,
-      type: t.securityDepositType || 'Cash' as any
+      type: t.securityDepositType || 'Cash'
     },
     insurance: {
       liability: t.liabilityInsurance || 1000000,
@@ -813,7 +775,7 @@ function convertToOfficeTenants(tenantArray: any[]): OfficeTenant[] {
     },
     
     // Operational
-    operatingHours: t.operatingHours || 'Standard' as any,
+    operatingHours: t.operatingHours || 'Standard',
     hvacHours: t.hvacHours || '7:00 AM - 6:00 PM',
     afterHoursHVAC: t.afterHoursHVAC || 35,
     employees: t.employees || 10,
@@ -834,7 +796,7 @@ function convertToOfficeTenants(tenantArray: any[]): OfficeTenant[] {
     expansionOptions: t.expansionOptions || [],
     
     // Sublease
-    subleaseRights: t.subleaseRights || 'Consent Required' as any,
+    subleaseRights: t.subleaseRights || 'Consent Required',
     recapture: t.recapture || false
   }));
 }
@@ -849,8 +811,8 @@ function convertToRetailTenants(tenantArray: any[]): RetailTenantType[] {
     nationalTenant: t.nationalTenant || false,
     
     // Store Classification
-    category: t.category || 'Inline' as any,
-    merchandiseType: t.merchandiseType || 'Other' as any,
+    category: t.category || 'Inline',
+    merchandiseType: t.merchandiseType || 'Other',
     naicsCode: t.naicsCode || '000000',
     essentialService: t.essentialService || false,
     
@@ -858,7 +820,7 @@ function convertToRetailTenants(tenantArray: any[]): RetailTenantType[] {
     unit: t.unit || 'Unit 1',
     squareFootage: t.squareFootage || 1000,
     frontage: t.frontage || 25,
-    location: t.location || 'Strip' as any,
+    location: t.location || 'Strip',
     floor: t.floor || 1,
     
     // Financial Terms
@@ -875,14 +837,14 @@ function convertToRetailTenants(tenantArray: any[]): RetailTenantType[] {
     reportedSales: t.reportedSales || t.annualSales,
     salesPSF: t.salesPSF || (t.reportedSales || t.annualSales || 0) / (t.squareFootage || 1000),
     compSales: t.compSales || 0,
-    salesReporting: t.salesReporting || 'Annual' as any,
+    salesReporting: t.salesReporting || 'Annual',
     
     // Operating Terms
-    camStructure: t.camStructure || 'Pro-rata' as any,
+    camStructure: t.camStructure || 'Pro-rata',
     camCap: t.camCap,
-    taxStructure: t.taxStructure || 'Pro-rata' as any,
-    insuranceStructure: t.insuranceStructure || 'Pro-rata' as any,
-    utilities: t.utilities || 'Separately Metered' as any,
+    taxStructure: t.taxStructure || 'Pro-rata',
+    insuranceStructure: t.insuranceStructure || 'Pro-rata',
+    utilities: t.utilities || 'Separately Metered',
     
     // Lease Clauses
     exclusiveUse: t.exclusiveUse,
@@ -894,15 +856,15 @@ function convertToRetailTenants(tenantArray: any[]): RetailTenantType[] {
     } : undefined,
     coTenancy: t.coTenancy ? {
       required: t.coTenancy.required || [],
-      remedy: t.coTenancy.remedy || 'Rent Reduction' as any,
+      remedy: t.coTenancy.remedy || 'Rent Reduction',
       rentReduction: t.coTenancy.rentReduction
     } : undefined,
-    goingDark: t.goingDark || 'Prohibited' as any,
+    goingDark: t.goingDark || 'Prohibited',
     
     // Credit & Risk
     creditRating: t.creditRating,
     bankruptcyHistory: t.bankruptcyHistory || false,
-    storePerformanceRating: t.storePerformanceRating || 'B' as any
+    storePerformanceRating: t.storePerformanceRating || 'B'
   }));
 }
 
@@ -912,7 +874,7 @@ function convertToIndustrialTenants(tenantArray: any[]): IndustrialTenant[] {
   return tenantArray.map(t => ({
     tenantName: t.name || t.tenantName || 'Unknown Tenant',
     parentCompany: t.parentCompany,
-    industry: t.industry || 'Logistics' as any,
+    industry: t.industry || 'Logistics',
     naicsCode: t.naicsCode,
     creditRating: t.creditRating,
     publicCompany: t.publicCompany || false,
@@ -923,8 +885,8 @@ function convertToIndustrialTenants(tenantArray: any[]): IndustrialTenant[] {
     leaseStartDate: new Date(t.leaseStartDate || Date.now()),
     leaseExpirationDate: new Date(t.leaseExpirationDate || Date.now() + 365 * 24 * 60 * 60 * 1000),
     baseRentPSF: t.baseRentPSF || t.rentPSF || 8,
-    rentType: t.rentType || 'NNN' as any,
-    escalationType: t.escalationType || 'Fixed' as any,
+    rentType: t.rentType || 'NNN',
+    escalationType: t.escalationType || 'Fixed',
     escalationRate: t.escalationRate || 3,
     
     // Space Configuration
@@ -938,7 +900,7 @@ function convertToIndustrialTenants(tenantArray: any[]): IndustrialTenant[] {
     dockDoorsRequired: t.dockDoorsRequired || 2,
     driveInDoorsRequired: t.driveInDoorsRequired || 0,
     powerRequirement: t.powerRequirement || 400,
-    temperatureControl: t.temperatureControl || 'Ambient' as any,
+    temperatureControl: t.temperatureControl || 'Ambient',
     
     // Specialized Features
     railAccess: t.railAccess || false,
@@ -947,7 +909,7 @@ function convertToIndustrialTenants(tenantArray: any[]): IndustrialTenant[] {
     hazmatPermits: t.hazmatPermits || false,
     
     // Operations
-    operatingHours: t.operatingHours || '8-5' as any,
+    operatingHours: t.operatingHours || '8-5',
     employeeCount: t.employeeCount || 25,
     truckTraffic: t.truckTraffic || 10,
     parkingRequired: t.parkingRequired || 30
@@ -959,7 +921,7 @@ function convertToMultifamilyUnits(unitArray: any[]): Unit[] {
   
   return unitArray.map(u => ({
     unitNumber: u.unitNumber || u.unit || 'Unit 1',
-    unitType: u.unitType || '2BR' as any,
+    unitType: u.unitType || '2BR',
     squareFootage: u.squareFootage || 1000,
     floor: u.floor || 1,
     
@@ -974,7 +936,7 @@ function convertToMultifamilyUnits(unitArray: any[]): Unit[] {
     occupied: u.occupied !== undefined ? u.occupied : true,
     tenantName: u.tenantName,
     tenantCreditScore: u.tenantCreditScore,
-    paymentHistory: u.paymentHistory || 'Good' as any,
+    paymentHistory: u.paymentHistory || 'Good',
     
     // Unit Features
     renovated: u.renovated || false,
@@ -990,7 +952,7 @@ function convertToMultifamilyUnits(unitArray: any[]): Unit[] {
     
     // Financial
     concessions: u.concessions ? {
-      type: u.concessions.type || 'Free Rent' as any,
+      type: u.concessions.type || 'Free Rent',
       amount: u.concessions.amount || 0,
       months: u.concessions.months || 0
     } : undefined,
@@ -1007,7 +969,7 @@ function convertToMixedUseComponents(componentArray: any[]): MixedUseComponent[]
   if (!componentArray || !Array.isArray(componentArray)) return [];
   
   return componentArray.map(c => ({
-    type: c.type || 'Office' as any,
+    type: c.type || 'Office',
     squareFootage: c.squareFootage || 10000,
     floors: c.floors || [1],
     separateEntrance: c.separateEntrance || false,
@@ -1029,11 +991,6 @@ function convertToMixedUseComponents(componentArray: any[]): MixedUseComponent[]
 
 // PACKAGE-BASED CALCULATION ROUTER
 function calculatePackageMetrics(packageId: string, data: PropertyData): any {
-  console.log(`🔧 PACKAGE METRICS: Starting calculation for package: ${packageId}`);
-  console.log(`🔧 PACKAGE METRICS: Input data keys:`, Object.keys(data));
-  console.log(`🔧 PACKAGE METRICS: Property type:`, data.propertyType);
-  console.log(`🔧 PACKAGE METRICS: Has tenants field:`, !!data.tenants);
-  console.log(`🔧 PACKAGE METRICS: Has officeTenants field:`, !!data.officeTenants);
   
   switch (packageId) {
     // OFFICE CALCULATIONS
@@ -1044,18 +1001,18 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           submarket: {
             name: 'CBD',
             totalInventory: 10000000,
-            class: 'CBD' as any,
+            class: 'CBD',
             vacancy: {
               current: 15,
               classA: 12,
               classB: 18,
               classC: 25,
-              trend: 'Stable' as any
+              trend: 'Stable'
             },
             absorption: {
               trailing12Months: 500000,
               quarterly: [100000, 150000, 125000, 125000],
-              trend: 'Positive' as any
+              trend: 'Positive'
             },
             construction: {
               underConstruction: 1000000,
@@ -1098,18 +1055,18 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           submarket: {
             name: 'CBD',
             totalInventory: 10000000,
-            class: 'CBD' as any,
+            class: 'CBD',
             vacancy: {
               current: 15,
               classA: 12,
               classB: 18,
               classC: 25,
-              trend: 'Stable' as any
+              trend: 'Stable'
             },
             absorption: {
               trailing12Months: 500000,
               quarterly: [100000, 150000, 125000, 125000],
-              trend: 'Positive' as any
+              trend: 'Positive'
             },
             construction: {
               underConstruction: 1000000,
@@ -1155,18 +1112,18 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           janitorialStaff: 5,
           
           hvacSystems: [{
-            type: 'VAV' as any,
+            type: 'VAV',
             age: 10,
-            condition: 'Good' as any,
+            condition: 'Good',
             maintenanceContract: true,
             energyEfficiency: 12.5,
-            controls: 'DDC' as any
+            controls: 'DDC'
           }],
           
           electricalSystems: {
             capacity: 6,
             voltage: '480V',
-            backupPower: 'Generator' as any,
+            backupPower: 'Generator',
             backupCapacity: 100,
             substations: 2
           },
@@ -1174,8 +1131,8 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           plumbing: {
             domesticWaterAge: 15,
             sewerAge: 20,
-            fixtures: 'Low Flow' as any,
-            hotWaterSystem: 'Central' as any
+            fixtures: 'Low Flow',
+            hotWaterSystem: 'Central'
           },
           
           elevatorSystems: {
@@ -1183,7 +1140,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
               count: 4,
               capacity: 3500,
               speed: 700,
-              type: 'Traction' as any,
+              type: 'Traction',
               age: 8,
               modernized: true
             },
@@ -1199,19 +1156,19 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
             internetProviders: ['Verizon', 'AT&T', 'Comcast'],
             fiberOptic: true,
             bandwidth: '1 Gbps',
-            riserCapacity: 'Full' as any,
+            riserCapacity: 'Full',
             cellularDAS: true,
             smartBuildingSystems: ['BMS', 'Access Control', 'Security'],
-            accessControl: 'Card' as any
+            accessControl: 'Card'
           },
           
           sustainability: {
             energyStarScore: 75,
             energyStarCertified: true,
-            leedCertification: 'Gold' as any,
+            leedCertification: 'Gold',
             leedVersion: 'v4',
             boma360: true,
-            wireCertification: 'Silver' as any,
+            wireCertification: 'Silver',
             fitWelCertification: false
           },
           
@@ -1271,18 +1228,18 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           submarket: {
             name: 'CBD',
             totalInventory: 10000000,
-            class: 'CBD' as any,
+            class: 'CBD',
             vacancy: {
               current: 15,
               classA: 12,
               classB: 18,
               classC: 25,
-              trend: 'Stable' as any
+              trend: 'Stable'
             },
             absorption: {
               trailing12Months: 500000,
               quarterly: [100000, 150000, 125000, 125000],
-              trend: 'Positive' as any
+              trend: 'Positive'
             },
             construction: {
               underConstruction: 1000000,
@@ -1320,10 +1277,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
 
     // ADDITIONAL OFFICE ENHANCED PACKAGES
     case 'office-walt-enhanced':
-      console.log(`🔧 OFFICE-WALT-ENHANCED: Starting calculation`);
-      console.log(`🔧 OFFICE-WALT-ENHANCED: Data.tenants:`, data.tenants);
       if (data.tenants) {
-        console.log(`🔧 OFFICE-WALT-ENHANCED: Converting ${data.tenants.length} tenants`);
         const tenants = convertToOfficeTenants(data.tenants);
         // Enhanced WALT calculation with credit weighting and options
         const totalRentableSF = tenants.reduce((sum, t) => sum + t.totalRentableSF, 0);
@@ -1371,8 +1325,6 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
             t.creditRating === 'AA' ? 6 : t.creditRating === 'A' ? 5 : 4), 0) / tenants.length
         };
         
-        console.log(`🔧 OFFICE-WALT-ENHANCED: Calculated WALT: ${waltInYears} years`);
-        console.log(`🔧 OFFICE-WALT-ENHANCED: Full result:`, result);
         return result;
       }
       break;
@@ -1578,10 +1530,10 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           tenant: tenant.tenantName,
           month: 12,
           year: 2023,
-          grossSales: tenant.reportedSales || tenant.salesPSF! * tenant.squareFootage,
-          returns: (tenant.reportedSales || tenant.salesPSF! * tenant.squareFootage) * 0.05,
-          netSales: (tenant.reportedSales || tenant.salesPSF! * tenant.squareFootage) * 0.95,
-          transactions: Math.floor((tenant.reportedSales || tenant.salesPSF! * tenant.squareFootage) / 50),
+          grossSales: tenant.reportedSales || (tenant.salesPSF || 0) * tenant.squareFootage,
+          returns: (tenant.reportedSales || (tenant.salesPSF || 0) * tenant.squareFootage) * 0.05,
+          netSales: (tenant.reportedSales || (tenant.salesPSF || 0) * tenant.squareFootage) * 0.95,
+          transactions: Math.floor((tenant.reportedSales || (tenant.salesPSF || 0) * tenant.squareFootage) / 50),
           averageTicket: 50
         }));
         
@@ -1589,7 +1541,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           salesPerformance: analyzeSalesPerformance(
             mockSalesData,
             tenants,
-            'Strip' as any
+            'Strip'
           )
         };
       }
@@ -1641,10 +1593,10 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
         const tenants = convertToRetailTenants(data.retailTenants);
         
         const percentageRentAnalysis = tenants.map(tenant => {
-          const annualSales = tenant.reportedSales || tenant.salesPSF! * tenant.squareFootage;
+          const annualSales = tenant.reportedSales || (tenant.salesPSF || 0) * tenant.squareFootage;
           const baseRent = tenant.baseRentPSF * tenant.squareFootage;
-          const breakpoint = baseRent / (tenant.percentageRent?.percentage || 6) * 100;
-          const percentageRent = Math.max(0, (annualSales - breakpoint) * (tenant.percentageRent?.percentage || 6) / 100);
+          const breakpoint = baseRent / (tenant.percentageRent?.rate || 6) * 100;
+          const percentageRent = Math.max(0, (annualSales - breakpoint) * (tenant.percentageRent?.rate || 6) / 100);
           
           return {
             tenant: tenant.tenantName,
@@ -1759,11 +1711,11 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           truckCourtDepth: data.truckCourtDepth || 130,
           
           powerCapacity: data.powerCapacity,
-          powerType: '3-Phase' as any,
-          lightingType: 'LED' as any,
+          powerType: '3-Phase',
+          lightingType: 'LED',
           footCandles: 30,
-          hvacType: 'Rooftop' as any,
-          fireSuppressionType: 'ESFR' as any,
+          hvacType: 'Rooftop',
+          fireSuppressionType: 'ESFR',
           sprinklerDensity: 'K-25.2'
         };
         
@@ -1773,7 +1725,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
           buildingFunctionality: analyzeBuildingFunctionality(
             mockSpecs,
             mockTenants,
-            'Warehouse' as any
+            'Warehouse'
           )
         };
       }
@@ -1807,7 +1759,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
         return {
           locationLogistics: analyzeLocationLogistics(
             mockLocation,
-            'Warehouse' as any,
+            'Warehouse',
             mockTenants
           )
         };
@@ -1904,11 +1856,11 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
       if (data.numberOfUnits && data.monthlyRentalIncome && data.occupancyRate && data.averageRentPerUnit) {
         const mockUnits = Array.from({ length: Math.min(data.numberOfUnits, 10) }, (_, i) => ({
           unitNumber: `Unit ${i + 1}`,
-          unitType: ['1BR', '2BR', '2BR', '3BR'][i % 4] as any,
+          unitType: ['1BR', '2BR', '2BR', '3BR'][i % 4] as '1BR' | '2BR' | '3BR',
           squareFootage: [750, 1000, 1000, 1200][i % 4],
           floor: Math.floor(i / 4) + 1,
-          currentRent: data.averageRentPerUnit + (Math.random() - 0.5) * 200,
-          marketRent: data.averageRentPerUnit + 100,
+          currentRent: (data.averageRentPerUnit || 1500) + (Math.random() - 0.5) * 200,
+          marketRent: (data.averageRentPerUnit || 1500) + 100,
           occupied: Math.random() > (100 - data.occupancyRate) / 100,
           renovated: Math.random() > 0.7,
           amenities: {
@@ -1982,12 +1934,12 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
       if (data.operatingExpenses && data.grossIncome && data.numberOfUnits && data.currentOccupancy) {
         const mockUnits = Array.from({ length: Math.min(data.numberOfUnits, 10) }, (_, i) => ({
           unitNumber: `Unit ${i + 1}`,
-          unitType: ['1BR', '2BR', '2BR', '3BR'][i % 4] as any,
+          unitType: ['1BR', '2BR', '2BR', '3BR'][i % 4] as '1BR' | '2BR' | '3BR',
           squareFootage: [750, 1000, 1000, 1200][i % 4],
           floor: Math.floor(i / 4) + 1,
           currentRent: (data.grossIncome / 12) / data.numberOfUnits,
           marketRent: (data.grossIncome / 12) / data.numberOfUnits + 100,
-          occupied: Math.random() > (100 - data.currentOccupancy) / 100,
+          occupied: Math.random() > (100 - (data.currentOccupancy || 95)) / 100,
           renovated: Math.random() > 0.7,
           amenities: {
             washerDryer: Math.random() > 0.5,
@@ -2061,7 +2013,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
             occupancyPremium: data.occupancyRate - 92,
             marketShare: data.numberOfUnits / 5000 * 100, // Assume 5000 unit submarket
             amenityScore: 75, // Based on amenities
-            conditionScore: data.yearBuilt > 2010 ? 85 : data.yearBuilt > 2000 ? 70 : 60
+            conditionScore: (data.yearBuilt || 1980) > 2010 ? 85 : (data.yearBuilt || 1980) > 2000 ? 70 : 60
           }
         };
         
@@ -2079,7 +2031,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
             currentRent: data.averageRent,
             occupancy: data.occupancyRate || 85,
             yearBuilt: data.yearBuilt || 1995,
-            condition: data.yearBuilt > 2010 ? 'Good' : data.yearBuilt > 2000 ? 'Fair' : 'Poor'
+            condition: (data.yearBuilt || 1980) > 2010 ? 'Good' : (data.yearBuilt || 1980) > 2000 ? 'Fair' : 'Poor'
           },
           renovationProgram: {
             totalBudget: data.renovationBudget,
@@ -2308,7 +2260,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
         
         const mockSharedSystems: SharedSystems = {
           hvac: {
-            type: 'Central' as any,
+            type: 'Central',
             allocation: new Map([
               ['Office', 40],
               ['Retail', 30],
@@ -2341,7 +2293,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
               ['Retail', true],
               ['Residential', false]
             ]),
-            allocation: 'ProRata' as any
+            allocation: 'ProRata'
           },
           security: {
             integrated: true,
@@ -2369,19 +2321,16 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
 
     // QUICK VALUATION PACKAGES
     case 'office-quick-valuation':
-      console.log('🚀 QUICK PACKAGE: Office Quick Valuation');
       const quickOfficeResults: any = {};
       
       // Cap Rate = (NOI / Purchase Price) × 100
       if (data.currentNOI && data.purchasePrice && data.purchasePrice > 0) {
         quickOfficeResults.capRate = (data.currentNOI / data.purchasePrice) * 100;
-        console.log('🚀 QUICK: Calculated Cap Rate:', quickOfficeResults.capRate);
       }
       
       // Price Per SF = Purchase Price / Total SF
       if (data.purchasePrice && data.totalSF && data.totalSF > 0) {
         quickOfficeResults.pricePerSF = data.purchasePrice / data.totalSF;
-        console.log('🚀 QUICK: Calculated Price Per SF:', quickOfficeResults.pricePerSF);
       }
       
       // GRM = Purchase Price / Gross Annual Income
@@ -2389,14 +2338,11 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
         // Estimate gross income as NOI / 0.75 (assuming 75% NOI ratio)
         const estimatedGrossIncome = data.currentNOI / 0.75;
         quickOfficeResults.grm = data.purchasePrice / estimatedGrossIncome;
-        console.log('🚀 QUICK: Calculated GRM:', quickOfficeResults.grm);
       }
       
-      console.log('🚀 QUICK PACKAGE: Returning office results:', quickOfficeResults);
       return quickOfficeResults;
 
     case 'office-quick-returns':
-      console.log('🚀 QUICK PACKAGE: Office Quick Returns');
       const quickReturnsResults: any = {};
       
       // Cap Rate
@@ -2414,11 +2360,9 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
         quickReturnsResults.roi = (data.annualCashFlow / data.totalInvestment) * 100;
       }
       
-      console.log('🚀 QUICK PACKAGE: Returning returns results:', quickReturnsResults);
       return quickReturnsResults;
 
     case 'retail-quick-valuation':
-      console.log('🚀 QUICK PACKAGE: Retail Quick Valuation');
       const quickRetailResults: any = {};
       
       // Cap Rate
@@ -2434,7 +2378,6 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
       return quickRetailResults;
 
     case 'industrial-quick-valuation':
-      console.log('🚀 QUICK PACKAGE: Industrial Quick Valuation');
       const quickIndustrialResults: any = {};
       
       // Cap Rate
@@ -2450,7 +2393,6 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
       return quickIndustrialResults;
 
     case 'office-quick-lease':
-      console.log('🚀 QUICK PACKAGE: Office Quick Lease');
       const quickLeaseResults: any = {};
       
       // Effective Rent PSF = Average Rent PSF - Operating Expenses PSF
@@ -2464,7 +2406,6 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
       return quickLeaseResults;
 
     case 'multifamily-quick-valuation':
-      console.log('🚀 QUICK PACKAGE: Multifamily Quick Valuation');
       const quickMultifamilyResults: any = {};
       
       // Cap Rate = NOI / Purchase Price
@@ -2488,7 +2429,6 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
       return quickMultifamilyResults;
 
     case 'mixeduse-quick-valuation':
-      console.log('🚀 QUICK PACKAGE: Mixed-Use Quick Valuation');
       const quickMixedUseResults: any = {};
       
       // Cap Rate
@@ -2556,22 +2496,12 @@ export function calculateROI(
   projectedNOI: number,
   capRate: number
 ): number {
-  console.log('ROI Calculation Inputs:', {
-    annualCashFlow,
-    totalInvestment,
-    holdingPeriod,
-    currentNOI,
-    projectedNOI,
-    capRate
-  });
 
   if (!annualCashFlow || !totalInvestment || !holdingPeriod || !currentNOI || !projectedNOI) {
-    console.log('ROI Calculation: Missing required inputs');
     return 0;
   }
 
   if (totalInvestment <= 0 || holdingPeriod <= 0) {
-    console.log('ROI Calculation: Invalid investment or holding period');
     return 0;
   }
 
@@ -2591,22 +2521,12 @@ export function calculateROI(
   const totalCashFlow = annualCashFlow * holdingPeriod;
   const totalReturn = totalCashFlow + propertyAppreciation;
 
-  console.log('ROI Calculation Steps:', {
-    step1: `NOI Growth = Projected NOI - Current NOI = ${projectedNOI} - ${currentNOI} = ${noiGrowth}`,
-    step2: `Property Appreciation = ${propertyAppreciation}`,
-    step3: `Total Cash Flow = Annual Cash Flow × Holding Period = ${annualCashFlow} × ${holdingPeriod} = ${totalCashFlow}`,
-    step4: `Total Return = Total Cash Flow + Property Appreciation = ${totalCashFlow} + ${propertyAppreciation} = ${totalReturn}`,
-    step5: `ROI = (Total Return / Total Investment) × 100 = (${totalReturn} / ${totalInvestment}) × 100`
-  });
-
   // Calculate ROI
   const roi = (totalReturn / totalInvestment) * 100;
 
-  console.log('Final ROI:', roi);
 
   // Validate the result
   if (isNaN(roi) || !isFinite(roi)) {
-    console.log('ROI Calculation: Result is NaN or infinite');
     return 0;
   }
 
@@ -2622,28 +2542,17 @@ export function calculateIRR(
   projectedNOI: number,
   capRate: number
 ): number {
-  console.log('IRR Calculation Inputs:', {
-    annualCashFlow,
-    totalInvestment,
-    holdingPeriod,
-    currentNOI,
-    projectedNOI,
-    capRate
-  });
 
   // Validate inputs
   if (!annualCashFlow || !totalInvestment || !holdingPeriod || !currentNOI || !projectedNOI) {
-    console.log('IRR Calculation: Missing required inputs');
     return 0;
   }
 
   if (totalInvestment <= 0) {
-    console.log('IRR Calculation: Total investment must be greater than 0');
     return 0;
   }
 
   if (holdingPeriod <= 0) {
-    console.log('IRR Calculation: Holding period must be greater than 0');
     return 0;
   }
 
@@ -2662,29 +2571,18 @@ export function calculateIRR(
   // Calculate total return (cash flow + appreciation)
   const totalCashFlow = annualCashFlow * holdingPeriod;
   const totalReturn = totalCashFlow + propertyAppreciation;
-  
-  console.log('IRR Calculation Steps:', {
-    step1: `NOI Growth = Projected NOI - Current NOI = ${projectedNOI} - ${currentNOI} = ${noiGrowth}`,
-    step2: `Property Appreciation = ${propertyAppreciation}`,
-    step3: `Total Cash Flow = Annual Cash Flow × Holding Period = ${annualCashFlow} × ${holdingPeriod} = ${totalCashFlow}`,
-    step4: `Total Return = Total Cash Flow + Property Appreciation = ${totalCashFlow} + ${propertyAppreciation} = ${totalReturn}`,
-    step5: `IRR = (Total Return / Total Investment)^(1/holdingPeriod) - 1 = (${totalReturn} / ${totalInvestment})^(1/${holdingPeriod}) - 1`
-  });
 
   // Ensure total return is positive
   if (totalReturn <= 0) {
-    console.log('IRR Calculation: Total return is not positive');
     return 0;
   }
 
   // Calculate IRR using the formula: IRR = (Total Return / Total Investment)^(1/holdingPeriod) - 1
   const irr = (Math.pow(totalReturn / totalInvestment, 1 / holdingPeriod) - 1) * 100;
   
-  console.log('Final IRR:', irr);
 
   // Validate the result
   if (isNaN(irr) || !isFinite(irr)) {
-    console.log('IRR Calculation: Result is NaN or infinite');
     return 0;
   }
 
@@ -2825,16 +2723,16 @@ export function calculateDealAssessment(metrics: CalculatedMetrics, flags: Metri
   let recommendation: string;
 
   if (excellentCount > goodCount && excellentCount > fairCount && excellentCount > poorCount) {
-    overall = 'Excellent';
+    overall = 'Excellent' as AssessmentLevel;
     recommendation = 'This deal shows excellent potential with multiple positive metrics.';
   } else if (goodCount >= excellentCount && goodCount >= fairCount && goodCount >= poorCount) {
-    overall = 'Good';
+    overall = 'Good' as AssessmentLevel;
     recommendation = 'This deal shows good potential. Consider negotiating better terms.';
   } else if (fairCount > excellentCount && fairCount > goodCount && fairCount > poorCount) {
-    overall = 'Fair';
+    overall = 'Fair' as AssessmentLevel;
     recommendation = 'This deal shows moderate potential with some areas of concern.';
   } else {
-    overall = 'Poor';
+    overall = 'Poor' as AssessmentLevel;
     recommendation = 'This deal shows several areas of concern. Consider passing or renegotiating.';
   }
 
@@ -3123,6 +3021,6 @@ export function calculateMultifamilyMetrics(data: {
   return {
     revenuePerUnit: Number(revenuePerUnit.toFixed(2)),
     annualizedRevenue,
-    marketComparison
+    ...(marketComparison !== undefined && { marketComparison })
   };
 } 

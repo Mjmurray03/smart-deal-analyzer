@@ -1,7 +1,7 @@
 // lib/calculations/packages/mixed-use-packages-enhanced.ts
 // Enhanced mixed-use property calculation packages with complex field definitions
 
-import { EnhancedCalculationPackage, FieldDefinition, FieldDefinitionFactory } from './enhanced-package-types';
+import { EnhancedCalculationPackage, FieldDefinitionFactory } from './enhanced-package-types';
 
 export const enhancedMixedUsePackages: EnhancedCalculationPackage[] = [
   // 25. Mixed-Use Component Performance

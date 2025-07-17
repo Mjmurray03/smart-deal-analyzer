@@ -9,13 +9,12 @@ interface CustomInputProps {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
   placeholder?: string;
-  prefix?: string;
-  suffix?: string;
+  prefix?: string | undefined;
+  suffix?: string | undefined;
   className?: string;
 }
 
 const Input: React.FC<CustomInputProps> = ({ type = 'text', value, onChange, placeholder, prefix, suffix, className }) => {
-  console.log('Input component check:', { type, value, onChange, placeholder, prefix, suffix, className });
   
   return (
     <div className="relative w-full">
@@ -50,7 +49,6 @@ interface CustomButtonProps {
 }
 
 const Button: React.FC<CustomButtonProps> = ({ onClick, variant = 'primary', size = 'md', className, children }) => {
-  console.log('Button component check:', { onClick, variant, size, className, children });
   
   const baseStyles = 'font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2';
   const variantStyles = {
@@ -100,7 +98,6 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({
   result,
   onSaveToAnalysis
 }) => {
-  console.log('CalculatorCard render:', { title, description, inputs, result, onSaveToAnalysis });
   
   return (
     <div className="bg-white rounded-lg border border-gray-200 p-4 shadow-sm hover:shadow-md transition-shadow max-w-sm w-full">
@@ -111,7 +108,6 @@ const CalculatorCard: React.FC<CalculatorCardProps> = ({
       
       <div className="space-y-3">
         {inputs && inputs.map((input, index) => {
-          console.log('Rendering input:', { input, index });
           return (
             <div key={index}>
               <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -552,7 +548,6 @@ export const FundamentalCalculators: React.FC = () => {
     }
   ];
 
-  console.log('FundamentalCalculators render:', { calculators });
   
   return (
     <div className="max-w-7xl mx-auto">
@@ -563,7 +558,6 @@ export const FundamentalCalculators: React.FC = () => {
       
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 justify-items-center">
         {calculators && calculators.map((calculator, index) => {
-          console.log('Rendering calculator:', { calculator, index });
           return (
             <CalculatorCard
               key={index}
@@ -573,7 +567,6 @@ export const FundamentalCalculators: React.FC = () => {
               result={calculator.result}
               onSaveToAnalysis={() => {
                 // Future implementation: save to full analysis
-                console.log(`Saving ${calculator.title} to full analysis`);
               }}
             />
           );

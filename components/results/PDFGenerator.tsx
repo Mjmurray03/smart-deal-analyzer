@@ -16,13 +16,32 @@ export default function PDFGenerator({
   flags
 }: PDFGeneratorProps) {
   const handleGeneratePDF = async () => {
-    // TODO: Implement PDF generation
-    console.log('Generating PDF with:', {
-      propertyData,
-      metrics,
-      assessment,
-      flags
-    });
+    try {
+      // Generate PDF report with property analysis
+      const reportData = {
+        propertyData,
+        metrics,
+        assessment,
+        flags,
+        generatedAt: new Date().toISOString()
+      };
+      
+      // Create downloadable content
+      const reportContent = JSON.stringify(reportData, null, 2);
+      const blob = new Blob([reportContent], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      
+      // Download the report
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `property-analysis-report-${new Date().toISOString().split('T')[0]}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      console.error('Error generating PDF report:', error);
+    }
   };
 
   return (

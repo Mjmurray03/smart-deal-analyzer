@@ -4,9 +4,6 @@ import { ArrowRightIcon, BuildingOfficeIcon, BuildingStorefrontIcon, BuildingOff
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 
 export default function AdvancedAnalysisPage() {
-  console.log('🎯 ADVANCED PATH: Advanced Analysis property selection page mounted');
-  console.log('🎯 ADVANCED PATH: Analysis level = ADVANCED');
-  
   const propertyTypes = [
     {
       id: 'office',
@@ -135,8 +132,6 @@ export default function AdvancedAnalysisPage() {
                 href={`/analyzer/advanced/${type.id}`}
                 className="inline-flex items-center w-full justify-center px-6 py-3 text-lg font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors duration-200"
                 onClick={() => {
-                  console.log(`🎯 ADVANCED PATH: User selected property type: ${type.id}`);
-                  console.log(`🎯 ADVANCED PATH: Navigating to /analyzer/advanced/${type.id}`);
                 }}
               >
                 Start {type.name} Analysis

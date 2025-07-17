@@ -15,13 +15,7 @@ export * from './utils';
 export type {
   Mode,
   MetricStatus,
-  ButtonVariant,
-  ButtonSize,
-  CardVariant,
-  InputVariant,
-  InputState,
-  AlertType,
-} from './components';
+} from './tokens';
 
 export type {
   ColorToken,

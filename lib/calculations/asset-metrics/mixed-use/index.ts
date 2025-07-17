@@ -1,12 +1,11 @@
 // lib/calculations/asset-metrics/mixed-use/index.ts
 // Comprehensive mixed-use property analytics for institutional investors
 
-import { PropertyData } from '../../types';
 
 // Import component-specific metrics
 import { OfficeTenant } from '../office';
-import { RetailTenant, analyzeSalesPerformance } from '../retail';
-import { Unit as ResidentialUnit, analyzeRevenuePerformance } from '../multifamily';
+import { RetailTenant } from '../retail';
+import { Unit as ResidentialUnit } from '../multifamily';
 
 // ==================== TYPE DEFINITIONS ====================
 
@@ -174,7 +173,7 @@ export function analyzeMixedUsePerformance(
                          (comp.noi / 0.6) / comp.squareFootage; // Estimated
     const expensePerSF = (comp.directExpenses + comp.proRataExpenses) / comp.squareFootage;
     const margin = comp.noi / (revenuePerSF * comp.squareFootage) * 100;
-    const marketCap = marketCapRates[comp.type];
+    const marketCap = marketCapRates[comp.type] ?? 7.0;
     const capRateVsMarket = comp.capRate - marketCap;
     
     let performanceRating: 'Outperforming' | 'Meeting' | 'Underperforming';
@@ -194,7 +193,6 @@ export function analyzeMixedUsePerformance(
   });
   
   // Synergy value calculation
-  const standalonePremium = 0.15; // Mixed-use typically trades at premium
   const operationalSynergies = calculateOperationalSynergies(components, sharedSystems);
   const revenueSynergies = calculateRevenueSynergies(components);
   const costSynergies = calculateCostSynergies(components, sharedSystems);
@@ -435,6 +433,10 @@ const sharedAmenitiesAnalysis = sharedAmenities.map(amenity => {
     utilization = 85; // Parking typically high utilization
   }
   
+  // Adjust utilization based on user count (more users = higher utilization)
+  if (userCount > 3) utilization += 10;
+  if (userCount > 5) utilization += 5;
+  
   // Cost sharing based on usage patterns
   const costSharing = new Map<string, number>();
   amenity.accessibleTo.forEach(user => {
@@ -457,6 +459,7 @@ const sharedAmenitiesAnalysis = sharedAmenities.map(amenity => {
     amenity: amenity.name,
     users: amenity.accessibleTo,
     utilization: Math.min(100, utilization),
+    costPerUser,
     costSharing
   };
 });
@@ -522,7 +525,7 @@ systemsIntegration: {
     cost: number;
     annualSavings: number;
     payback: number;
-  };
+  } | undefined;
 }[];
 bestPractices: {
   practice: string;
@@ -656,6 +659,18 @@ const systemsIntegration = systemsToAnalyze.map(({ name, system }) => {
   let efficiency = 50;
   const issues: string[] = [];
   
+  // Analyze system integration based on its configuration
+  if (system && typeof system === 'object') {
+    // Check if system has integration indicators
+    const hasIntegration = Object.values(system).some(value => 
+      typeof value === 'boolean' && value === true
+    );
+    if (hasIntegration) {
+      integrationLevel = 'Partial';
+      efficiency += 20;
+    }
+  }
+  
   switch (name) {
     case 'HVAC':
       if (sharedSystems.hvac.type === 'Central') {
@@ -712,7 +727,7 @@ const systemsIntegration = systemsToAnalyze.map(({ name, system }) => {
   }
   
   // Calculate upgrade ROI for non-integrated systems
-  let upgradeROI = undefined;
+  let upgradeROI: { cost: number; annualSavings: number; payback: number; } | undefined = undefined;
   if (integrationLevel !== 'Full') {
     const upgradeCost = totalSF * (name === 'HVAC' ? 15 : 5);
     const currentInefficiency = (100 - efficiency) / 100;

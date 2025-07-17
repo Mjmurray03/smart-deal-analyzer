@@ -1,16 +1,33 @@
 'use client';
 
-// External imports
-import React, { useState } from 'react';
-import { CheckIcon, PlusIcon, MinusIcon, BeakerIcon } from '@heroicons/react/24/solid';
-
-// Internal imports - Types
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import { 
+  CheckCircle, 
+  ChevronDown, 
+  Check, 
+  Plus, 
+  X, 
+  Users, 
+  ArrowLeft, 
+  Save,
+  HelpCircle,
+  TrendingUp,
+  DollarSign,
+  Calculator,
+  Building,
+  Settings
+} from 'lucide-react';
+import { Card, CardHeader, CardBody } from '@/components/ui/Card';
+import { Button } from '@/components/ui/Button';
+import { Badge } from '@/components/ui/Badge';
+import Input from '@/components/ui/Input';
+import { cn } from '@/lib/design-system/utils';
 import { PropertyData } from '@/lib/calculations/types';
 import { FieldDefinition } from '@/lib/calculations/packages/enhanced-package-types';
 
 interface EnhancedDynamicInputFormProps {
   requiredFields: FieldDefinition[] | (keyof PropertyData)[];
-  optionalFields?: FieldDefinition[] | (keyof PropertyData)[];
+  optionalFields?: FieldDefinition[] | (keyof PropertyData)[] | undefined;
   data: PropertyData;
   onChange: (data: PropertyData) => void;
   packageType?: string;
@@ -20,230 +37,118 @@ interface ArrayFieldState {
   [fieldName: string]: unknown[];
 }
 
-// Sample data for different package types
-const sampleData: Record<string, Partial<PropertyData>> = {
-  'office-tenant-credit': {
-    tenants: [
-      { 
-        tenantName: 'Tech Corp', 
-        creditRating: 'BBB', 
-        publicCompany: true, 
-        industry: 'Technology', 
-        annualRevenue: 50000000, 
-        yearsInBusiness: 10, 
-        rentableSquareFeet: 15000, 
-        baseRentPSF: 65,
-        leaseType: 'Modified Gross',
-        leaseStartDate: '2023-01-01',
-        leaseEndDate: '2028-12-31'
-      },
-      { 
-        tenantName: 'Law Firm LLP', 
-        creditRating: 'A', 
-        publicCompany: false, 
-        industry: 'Legal', 
-        annualRevenue: 25000000, 
-        yearsInBusiness: 20, 
-        rentableSquareFeet: 8000, 
-        baseRentPSF: 75,
-        leaseType: 'Full Service',
-        leaseStartDate: '2022-06-01',
-        leaseEndDate: '2027-05-31'
-      }
-    ],
-    totalSquareFeet: 50000,
-    occupancyRate: 92
-  },
-  'office-walt-enhanced': {
-    tenants: [
-      {
-        tenantName: 'Microsoft Corporation',
-        creditRating: 'AAA',
-        rentableSquareFeet: 25000,
-        baseRentPSF: 75,
-        leaseStartDate: '2020-01-01',
-        leaseExpirationDate: '2029-12-31', // ~5 years from now
-        renewalOptions: '2 x 5 years at market',
-        publicCompany: true
-      },
-      {
-        tenantName: 'Wells Fargo Bank',
-        creditRating: 'A',
-        rentableSquareFeet: 15000,
-        baseRentPSF: 68,
-        leaseStartDate: '2019-06-01',
-        leaseExpirationDate: '2028-05-31', // ~3.5 years from now
-        renewalOptions: '1 x 5 years at 105% of market',
-        publicCompany: true
-      },
-      {
-        tenantName: 'Regional Law Firm',
-        creditRating: 'BBB',
-        rentableSquareFeet: 8000,
-        baseRentPSF: 60,
-        leaseStartDate: '2021-01-01',
-        leaseExpirationDate: '2027-12-31', // ~3 years from now
-        renewalOptions: 'None',
-        publicCompany: false
-      }
-    ],
-    includeOptions: true,
-    optionProbability: 75,
-    totalRentableSF: 48000
-  },
-  'office-quick-valuation': {
-    purchasePrice: 10000000,
-    currentNOI: 800000,
-    totalSF: 50000
-  },
-  'office-quick-returns': {
-    purchasePrice: 10000000,
-    currentNOI: 800000,
-    totalInvestment: 12000000,
-    annualCashFlow: 500000
-  },
-  'office-quick-lease': {
-    averageRentPSF: 65,
-    operatingExpenses: 1200000
-  },
-  'office-quick-financing': {
-    purchasePrice: 10000000,
-    loanAmount: 7500000,
-    interestRate: 5.5,
-    loanTerm: 30,
-    currentNOI: 800000
-  },
-  'retail-quick-valuation': {
-    purchasePrice: 15000000,
-    currentNOI: 1050000,
-    grossLeasableArea: 75000
-  },
-  'industrial-quick-valuation': {
-    purchasePrice: 8000000,
-    currentNOI: 640000,
-    squareFootage: 100000
-  },
-  'industrial-quick-efficiency': {
-    purchasePrice: 8000000,
-    squareFootage: 100000,
-    clearHeight: 32,
-    numberOfDockDoors: 20
-  },
-  'multifamily-quick-valuation': {
-    purchasePrice: 25000000,
-    numberOfUnits: 100,
-    averageRent: 2500,
-    occupancyRate: 92
-  },
-  'mixeduse-quick-valuation': {
-    purchasePrice: 45000000,
-    currentNOI: 2700000,
-    totalSF: 150000
-  },
-  'retail-tenant-analysis': {
-    tenants: [
-      {
-        tenantName: 'Starbucks',
-        tenantType: 'National',
-        creditRating: 'A',
-        category: 'Food & Beverage',
-        squareFeet: 2500,
-        baseRentPSF: 45,
-        percentageRent: true,
-        salesBreakpoint: 1500000,
-        percentageRate: 6,
-        leaseStartDate: '2021-01-01',
-        leaseEndDate: '2031-12-31'
-      },
-      {
-        tenantName: 'Target',
-        tenantType: 'Anchor',
-        creditRating: 'A',
-        category: 'Department Store',
-        squareFeet: 125000,
-        baseRentPSF: 12,
-        percentageRent: false,
-        leaseStartDate: '2020-01-01',
-        leaseEndDate: '2040-12-31'
-      }
-    ],
-    totalGLA: 250000,
-    parkingSpaces: 1250
-  },
-  'industrial-tenant-credit': {
-    tenants: [
-      {
-        tenantName: 'Amazon Logistics',
-        creditRating: 'AA',
-        businessType: 'Distribution',
-        squareFeet: 100000,
-        clearHeight: 36,
-        dockDoors: 20,
-        truckCourts: 185,
-        powerRequirements: '480V 3-phase',
-        leaseStartDate: '2022-01-01',
-        leaseEndDate: '2032-12-31',
-        baseRentPSF: 8.50
-      },
-      {
-        tenantName: 'FedEx Ground',
-        creditRating: 'BBB',
-        businessType: 'Last Mile Delivery',
-        squareFeet: 75000,
-        clearHeight: 32,
-        dockDoors: 15,
-        truckCourts: 150,
-        powerRequirements: '208V 3-phase',
-        leaseStartDate: '2021-06-01',
-        leaseEndDate: '2029-05-31',
-        baseRentPSF: 9.75
-      }
-    ],
-    totalSF: 200000,
-    landSize: 10
-  },
-  'multifamily-value-add': {
-    units: [
-      { unitType: 'Studio', count: 20, avgSF: 500, currentRent: 1200, marketRent: 1400 },
-      { unitType: '1BR', count: 40, avgSF: 750, currentRent: 1600, marketRent: 1850 },
-      { unitType: '2BR', count: 30, avgSF: 1100, currentRent: 2200, marketRent: 2500 },
-      { unitType: '3BR', count: 10, avgSF: 1400, currentRent: 2800, marketRent: 3200 }
-    ],
-    totalUnits: 100,
-    currentOccupancy: 88,
-    purchasePrice: 25000000,
-    renovationCostPerUnit: 15000
-  },
-  'mixed-use-valuation': {
-    components: [
-      {
-        componentType: 'Retail',
-        squareFeet: 25000,
-        units: 10,
-        avgRentPSF: 35,
-        occupancy: 95,
-        capRate: 6.5
-      },
-      {
-        componentType: 'Office',
-        squareFeet: 50000,
-        units: 1,
-        avgRentPSF: 45,
-        occupancy: 90,
-        capRate: 7.0
-      },
-      {
-        componentType: 'Residential',
-        squareFeet: 75000,
-        units: 60,
-        avgRentPSF: 3.50,
-        occupancy: 93,
-        capRate: 5.5
-      }
-    ],
-    totalSF: 150000,
-    purchasePrice: 45000000
+interface FieldGroup {
+  id: string;
+  name: string;
+  icon: React.ComponentType<{ className?: string }>;
+  fields: string[];
+  description?: string;
+}
+
+type AutoSaveStatus = 'saving' | 'saved' | null;
+
+// Enhanced field configuration with smart grouping
+const getFieldGroups = (allFields: (FieldDefinition | keyof PropertyData)[]): FieldGroup[] => {
+  const fieldNames = allFields.map(field => 
+    typeof field === 'object' ? field.field : field
+  );
+
+  const groups: FieldGroup[] = [
+    {
+      id: 'basic',
+      name: 'Basic Information',
+      icon: Building,
+      description: 'Essential property details',
+      fields: fieldNames.filter(field => 
+        ['propertyName', 'propertyAddress', 'totalSquareFootage', 'squareFootage', 'totalSF', 'grossLeasableArea', 'numberOfUnits'].includes(field)
+      )
+    },
+    {
+      id: 'financial',
+      name: 'Financial Details',
+      icon: DollarSign,
+      description: 'Purchase price and income information',
+      fields: fieldNames.filter(field => 
+        ['purchasePrice', 'currentNOI', 'projectedNOI', 'grossIncome', 'annualRent', 'averageRent', 'monthlyRent'].includes(field)
+      )
+    },
+    {
+      id: 'loan',
+      name: 'Loan Information',
+      icon: Calculator,
+      description: 'Financing and loan terms',
+      fields: fieldNames.filter(field => 
+        ['loanAmount', 'interestRate', 'loanTerm', 'ltv', 'dscr'].includes(field)
+      )
+    },
+    {
+      id: 'operating',
+      name: 'Operating Metrics',
+      icon: TrendingUp,
+      description: 'Expenses and operational data',
+      fields: fieldNames.filter(field => 
+        ['operatingExpenses', 'managementFees', 'reserves', 'vacancyRate', 'occupancyRate', 'capRate'].includes(field)
+      )
+    },
+    {
+      id: 'advanced',
+      name: 'Advanced Fields',
+      icon: Settings,
+      description: 'Additional parameters and complex data',
+      fields: fieldNames.filter(field => 
+        !['propertyName', 'propertyAddress', 'totalSquareFootage', 'squareFootage', 'totalSF', 'grossLeasableArea', 'numberOfUnits',
+          'purchasePrice', 'currentNOI', 'projectedNOI', 'grossIncome', 'annualRent', 'averageRent', 'monthlyRent',
+          'loanAmount', 'interestRate', 'loanTerm', 'ltv', 'dscr',
+          'operatingExpenses', 'managementFees', 'reserves', 'vacancyRate', 'occupancyRate', 'capRate'].includes(field)
+      )
+    }
+  ];
+
+  // Filter out empty groups and ensure at least one group exists
+  const nonEmptyGroups = groups.filter(group => group.fields.length > 0);
+  
+  if (nonEmptyGroups.length === 0) {
+    // Fallback: put all fields in a single group
+    return [{
+      id: 'all',
+      name: 'Property Information',
+      icon: Building,
+      description: 'All required fields',
+      fields: fieldNames
+    }];
   }
+
+  return nonEmptyGroups;
+};
+
+// Smart suggestions based on property type and existing data
+const getFieldSuggestion = (fieldName: string, formData: PropertyData, propertyType?: string): number | null => {
+  switch (fieldName) {
+    case 'loanAmount':
+      if (formData.purchasePrice) {
+        return formData.purchasePrice * 0.75; // 75% LTV suggestion
+      }
+      break;
+    case 'interestRate':
+      return 5.5; // Current market rate suggestion
+    case 'loanTerm':
+      return 30; // Standard term
+    case 'vacancyRate':
+      if (propertyType === 'multifamily') return 5;
+      if (propertyType === 'office') return 8;
+      return 7;
+    case 'managementFees':
+      if (formData.grossIncome) {
+        return formData.grossIncome * 0.05; // 5% of gross income
+      }
+      break;
+    case 'reserves':
+      if (formData.grossIncome) {
+        return formData.grossIncome * 0.03; // 3% of gross income
+      }
+      break;
+  }
+  return null;
 };
 
 export default function EnhancedDynamicInputForm({ 
@@ -254,53 +159,114 @@ export default function EnhancedDynamicInputForm({
   packageType 
 }: EnhancedDynamicInputFormProps) {
   
-  // Initialize array field state from data prop
-  const initializeArrayState = () => {
-    const initialState: ArrayFieldState = {};
-    const allFields = [...requiredFields, ...optionalFields];
-    
-    allFields.forEach((field) => {
-      if (typeof field === 'object' && 'type' in field && field.type === 'array') {
-        const fieldDef = field as FieldDefinition;
-        const existingData = data[fieldDef.field as keyof PropertyData];
-        if (Array.isArray(existingData) && existingData.length > 0) {
-          initialState[fieldDef.field] = existingData;
-        }
-      }
-    });
-    
-    return initialState;
-  };
-  
-  const [arrayFieldState, setArrayFieldState] = useState<ArrayFieldState>(initializeArrayState);
-  
+  // State management
+  const [arrayFieldState, setArrayFieldState] = useState<ArrayFieldState>({});
+  const [expandedSections, setExpandedSections] = useState<Record<string, boolean>>({});
+  const [errors, setErrors] = useState<Record<string, string>>({});
+  const [autoSaveStatus, setAutoSaveStatus] = useState<AutoSaveStatus>(null);
+  const [hasChanges, setHasChanges] = useState(false);
+
   // Check if we're dealing with enhanced fields or legacy fields
   const isEnhancedFields = Array.isArray(requiredFields) && requiredFields.length > 0 && 
                           typeof requiredFields[0] === 'object' && 'field' in requiredFields[0];
+
+  // Combine all fields for processing
+  const allFields = useMemo(() => [...requiredFields, ...optionalFields], [requiredFields, optionalFields]);
   
-  console.log('📝 ENHANCED DYNAMIC INPUT FORM: Component mounted/updated');
-  console.log('📝 ENHANCED DYNAMIC INPUT FORM: Required Fields:', requiredFields);
-  console.log('📝 ENHANCED DYNAMIC INPUT FORM: Optional Fields:', optionalFields);
-  console.log('📝 ENHANCED DYNAMIC INPUT FORM: Current Data:', data);
-  console.log('📝 ENHANCED DYNAMIC INPUT FORM: Is Enhanced Fields:', isEnhancedFields);
-  
-  if (isEnhancedFields) {
-    const arrayFields = requiredFields.filter(field => 
-      typeof field === 'object' && 'type' in field && field.type === 'array'
+  // Create field groups
+  const fieldGroups = useMemo(() => 
+    getFieldGroups(allFields), 
+    [allFields]
+  );
+
+  // Initialize expanded sections (first section open by default)
+  useEffect(() => {
+    if (fieldGroups.length > 0 && fieldGroups[0]) {
+      setExpandedSections({ [fieldGroups[0].id]: true });
+    }
+  }, [fieldGroups]);
+
+  // Auto-save functionality
+  useEffect(() => {
+    if (!hasChanges) return;
+
+    const timeoutId = setTimeout(() => {
+      setAutoSaveStatus('saving');
+      
+      // Save to localStorage
+      const draftKey = `smartdeal-draft-${packageType || 'default'}`;
+      localStorage.setItem(draftKey, JSON.stringify(data));
+      
+      setTimeout(() => {
+        setAutoSaveStatus('saved');
+        setHasChanges(false);
+        
+        // Clear saved status after 3 seconds
+        setTimeout(() => setAutoSaveStatus(null), 3000);
+      }, 500);
+    }, 2000); // 2 second delay
+
+    return () => clearTimeout(timeoutId);
+  }, [data, hasChanges, packageType]);
+
+  // Field validation
+  const validateField = useCallback((fieldName: string, value: any): string | null => {
+    if (!value && value !== 0) return null;
+
+    // Get field definition
+    const fieldDef = allFields.find(field => 
+      typeof field === 'object' ? field.field === fieldName : field === fieldName
     );
-    console.log('📝 ENHANCED DYNAMIC INPUT FORM: Array Fields Found:', arrayFields.map(f => f.field));
-  }
-  
-  const handleInputChange = (field: string, value: unknown) => {
-    console.log(`📝 ENHANCED FORM: Field changed - ${field}:`, value);
+
+    if (typeof fieldDef === 'object' && fieldDef.validation) {
+      const { min, max } = fieldDef.validation;
+      const numValue = parseFloat(value);
+      
+      if (min && numValue < min) {
+        return `Value must be at least ${min.toLocaleString()}`;
+      }
+      if (max && numValue > max) {
+        return `Value cannot exceed ${max.toLocaleString()}`;
+      }
+    }
+
+    // Type-specific validation
+    if (typeof value === 'number') {
+      if (fieldName.includes('Rate') || fieldName.includes('rate')) {
+        if (value < 0 || value > 100) {
+          return 'Rate must be between 0 and 100';
+        }
+      }
+      if (fieldName.includes('Price') || fieldName.includes('Amount')) {
+        if (value < 0) {
+          return 'Amount cannot be negative';
+        }
+      }
+    }
+
+    return null;
+  }, [allFields]);
+
+  // Handle field changes
+  const handleFieldChange = useCallback((fieldName: string, value: any) => {
+    // Validate field
+    const error = validateField(fieldName, value);
+    setErrors(prev => ({
+      ...prev,
+      [fieldName]: error || ''
+    }));
+
+    // Update data
     onChange({
       ...data,
-      [field]: value,
+      [fieldName]: value,
     });
-  };
-  
-  const handleArrayFieldChange = (fieldName: string, index: number, subField: string, value: unknown) => {
-    console.log(`📝 ENHANCED FORM: Array field changed - ${fieldName}[${index}].${subField}:`, value);
+
+    setHasChanges(true);
+  }, [data, onChange, validateField]);
+
+  // Array field operations
+  const handleArrayFieldChange = useCallback((fieldName: string, index: number, subField: string, value: unknown) => {
     const dataFromProps = data[fieldName as keyof PropertyData];
     const currentArray = Array.isArray(dataFromProps) ? [...dataFromProps] : [...(arrayFieldState[fieldName] || [])];
     
@@ -318,15 +284,15 @@ export default function EnhancedDynamicInputForm({
       [fieldName]: currentArray
     }));
     
-    // Update the main data
-    console.log(`📝 ENHANCED FORM: Updated array data for ${fieldName}:`, currentArray);
     onChange({
       ...data,
       [fieldName]: currentArray
     });
-  };
-  
-  const addArrayItem = (fieldName: string) => {
+
+    setHasChanges(true);
+  }, [data, onChange, arrayFieldState]);
+
+  const addArrayItem = useCallback((fieldName: string) => {
     const dataFromProps = data[fieldName as keyof PropertyData];
     const currentArray = Array.isArray(dataFromProps) ? dataFromProps : (arrayFieldState[fieldName] || []);
     const newArray = [...currentArray, {}];
@@ -340,9 +306,11 @@ export default function EnhancedDynamicInputForm({
       ...data,
       [fieldName]: newArray
     });
-  };
-  
-  const removeArrayItem = (fieldName: string, index: number) => {
+
+    setHasChanges(true);
+  }, [data, onChange, arrayFieldState]);
+
+  const removeArrayItem = useCallback((fieldName: string, index: number) => {
     const dataFromProps = data[fieldName as keyof PropertyData];
     const currentArray = Array.isArray(dataFromProps) ? dataFromProps : (arrayFieldState[fieldName] || []);
     const updatedArray = currentArray.filter((_, i) => i !== index);
@@ -356,497 +324,359 @@ export default function EnhancedDynamicInputForm({
       ...data,
       [fieldName]: updatedArray
     });
-  };
-  
+
+    setHasChanges(true);
+  }, [data, onChange, arrayFieldState]);
+
+  // Utility functions
   const getFieldValue = (field: string): unknown => {
     return data[field as keyof PropertyData] || '';
   };
-  
+
   const isFieldFilled = (field: string): boolean => {
     const value = data[field as keyof PropertyData];
     
-    if (value === undefined || value === null) {
-      return false;
-    }
-    
-    if (typeof value === 'string') {
-      return value.trim() !== '';
-    }
-    
-    if (typeof value === 'number') {
-      return value !== 0;
-    }
-    
-    if (Array.isArray(value)) {
-      return value.length > 0;
-    }
-    
-    if (typeof value === 'object') {
-      return Object.keys(value).length > 0;
-    }
+    if (value === undefined || value === null) return false;
+    if (typeof value === 'string') return value.trim() !== '';
+    if (typeof value === 'number') return value !== 0;
+    if (Array.isArray(value)) return value.length > 0;
+    if (typeof value === 'object') return Object.keys(value).length > 0;
     
     return false;
   };
-  
-  const renderEnhancedField = (fieldDef: FieldDefinition, isRequired: boolean = false) => {
-    const { field, type, label, description, validation, options, subFields, placeholder, helperText } = fieldDef;
-    const isFilled = isFieldFilled(field);
-    
-    switch (type) {
-      case 'string':
-        return (
-          <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 flex items-center">
-              {label || field}
-              {isRequired && <span className="text-red-500 ml-1">*</span>}
-              {isFilled && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-            </label>
-            <input
-              type="text"
-              value={getFieldValue(field)}
-              onChange={(e) => handleInputChange(field, e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder={placeholder}
-              min={validation?.min}
-              max={validation?.max}
-            />
-            {helperText && (
-              <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-            )}
-            {description && (
-              <p className="mt-1 text-xs text-gray-400">{description}</p>
-            )}
-          </div>
-        );
-        
-      case 'number':
-        return (
-          <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 flex items-center">
-              {label || field}
-              {isRequired && <span className="text-red-500 ml-1">*</span>}
-              {isFilled && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-            </label>
-            <input
-              type="number"
-              step={1}
-              value={getFieldValue(field)}
-              onChange={(e) => handleInputChange(field, parseFloat(e.target.value) || 0)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-              placeholder={placeholder}
-              min={validation?.min}
-              max={validation?.max}
-            />
-            {helperText && (
-              <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-            )}
-            {description && (
-              <p className="mt-1 text-xs text-gray-400">{description}</p>
-            )}
-          </div>
-        );
-        
-      case 'currency':
-        return (
-          <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 flex items-center">
-              {label || field}
-              {isRequired && <span className="text-red-500 ml-1">*</span>}
-              {isFilled && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-            </label>
-            <div className="relative mt-1">
-              <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">$</span>
-              </div>
-              <input
-                type="number"
-                step={0.01}
-                value={getFieldValue(field)}
-                onChange={(e) => handleInputChange(field, parseFloat(e.target.value) || 0)}
-                className="block w-full pl-7 pr-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                placeholder={placeholder}
-                min={validation?.min}
-                max={validation?.max}
-              />
-            </div>
-            {helperText && (
-              <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-            )}
-            {description && (
-              <p className="mt-1 text-xs text-gray-400">{description}</p>
-            )}
-          </div>
-        );
-        
-      case 'percentage':
-        return (
-          <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 flex items-center">
-              {label || field}
-              {isRequired && <span className="text-red-500 ml-1">*</span>}
-              {isFilled && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-            </label>
-            <div className="relative mt-1">
-              <input
-                type="number"
-                step={0.01}
-                value={getFieldValue(field)}
-                onChange={(e) => handleInputChange(field, parseFloat(e.target.value) || 0)}
-                className="block w-full pr-8 pl-3 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                placeholder={placeholder}
-                min={validation?.min}
-                max={validation?.max}
-              />
-              <div className="absolute inset-y-0 right-0 flex items-center pr-3 pointer-events-none">
-                <span className="text-gray-500 sm:text-sm">%</span>
-              </div>
-            </div>
-            {helperText && (
-              <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-            )}
-            {description && (
-              <p className="mt-1 text-xs text-gray-400">{description}</p>
-            )}
-          </div>
-        );
-        
-      case 'boolean':
-        return (
-          <div key={field}>
-            <label className="flex items-center">
-              <input
-                type="checkbox"
-                checked={getFieldValue(field) || false}
-                onChange={(e) => handleInputChange(field, e.target.checked)}
-                className="rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-              />
-              <span className="ml-2 text-sm text-gray-700">
-                {label || field}
-                {isRequired && <span className="text-red-500 ml-1">*</span>}
-              </span>
-              {isFilled && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-            </label>
-            {description && (
-              <p className="mt-1 text-xs text-gray-400">{description}</p>
-            )}
-          </div>
-        );
-        
-      case 'select':
-        return (
-          <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 flex items-center">
-              {label || field}
-              {isRequired && <span className="text-red-500 ml-1">*</span>}
-              {isFilled && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-            </label>
-            <select
-              value={getFieldValue(field)}
-              onChange={(e) => handleInputChange(field, e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            >
-              <option value="">Select {label || field}</option>
-              {options?.map((option) => (
-                <option 
-                  key={typeof option === 'string' ? option : option.value}
-                  value={typeof option === 'string' ? option : option.value}
-                >
-                  {typeof option === 'string' ? option : option.label}
-                </option>
-              ))}
-            </select>
-            {helperText && (
-              <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-            )}
-            {description && (
-              <p className="mt-1 text-xs text-gray-400">{description}</p>
-            )}
-          </div>
-        );
-        
-      case 'date':
-        return (
-          <div key={field}>
-            <label className="block text-sm font-medium text-gray-700 flex items-center">
-              {label || field}
-              {isRequired && <span className="text-red-500 ml-1">*</span>}
-              {isFilled && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-            </label>
-            <input
-              type="date"
-              value={getFieldValue(field)}
-              onChange={(e) => handleInputChange(field, e.target.value)}
-              className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-            {helperText && (
-              <p className="mt-1 text-xs text-gray-500">{helperText}</p>
-            )}
-            {description && (
-              <p className="mt-1 text-xs text-gray-400">{description}</p>
-            )}
-          </div>
-        );
-        
-      case 'array':
-        console.log(`🔥 ARRAY FIELD RENDERING: ${field}`);
-        console.log(`🔥 ARRAY FIELD: subFields:`, subFields);
-        if (!subFields) {
-          console.log(`🔥 ARRAY FIELD: No subFields found for ${field}`);
-          return null;
-        }
-        
-        // Use data from props if available, otherwise use local state
-        const dataFromProps = data[field as keyof PropertyData];
-        const arrayItems = Array.isArray(dataFromProps) ? dataFromProps : (arrayFieldState[field] || []);
-        console.log(`🔥 ARRAY FIELD: ${field} items:`, arrayItems);
-        
-        return (
-          <div key={field} className="col-span-full">
-            <label className="block text-sm font-medium text-gray-700 flex items-center mb-2">
-              {label || field}
-              {isRequired && <span className="text-red-500 ml-1">*</span>}
-              {arrayItems.length > 0 && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-            </label>
-            {description && (
-              <p className="text-xs text-gray-400 mb-2">{description}</p>
-            )}
-            
-            <div className="space-y-4">
-              {arrayItems.map((item, index) => (
-                <div key={index} className="border border-gray-200 rounded-lg p-4 bg-gray-50">
-                  <div className="flex justify-between items-center mb-3">
-                    <h4 className="text-sm font-medium text-gray-900">
-                      {label || field} #{index + 1}
-                    </h4>
-                    <button
-                      type="button"
-                      onClick={() => removeArrayItem(field, index)}
-                      className="text-red-600 hover:text-red-800"
-                    >
-                      <MinusIcon className="h-4 w-4" />
-                    </button>
-                  </div>
-                  
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                    {subFields.map((subField) => (
-                      <div key={subField.field}>
-                        <label className="block text-xs font-medium text-gray-600">
-                          {subField.label || subField.field}
-                          {subField.required && <span className="text-red-500 ml-1">*</span>}
-                        </label>
-                        {subField.type === 'select' ? (
-                          <select
-                            value={item[subField.field] || ''}
-                            onChange={(e) => handleArrayFieldChange(field, index, subField.field, e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs"
-                          >
-                            <option value="">Select...</option>
-                            {subField.options?.map((option) => (
-                              <option 
-                                key={typeof option === 'string' ? option : option.value}
-                                value={typeof option === 'string' ? option : option.value}
-                              >
-                                {typeof option === 'string' ? option : option.label}
-                              </option>
-                            ))}
-                          </select>
-                        ) : subField.type === 'boolean' ? (
-                          <input
-                            type="checkbox"
-                            checked={item[subField.field] || false}
-                            onChange={(e) => handleArrayFieldChange(field, index, subField.field, e.target.checked)}
-                            className="mt-1 rounded border-gray-300 text-blue-600 shadow-sm focus:border-blue-500 focus:ring-blue-500"
-                          />
-                        ) : subField.type === 'date' ? (
-                          <input
-                            type="date"
-                            value={item[subField.field] || ''}
-                            onChange={(e) => handleArrayFieldChange(field, index, subField.field, e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs"
-                          />
-                        ) : subField.type === 'currency' ? (
-                          <div className="relative mt-1">
-                            <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
-                              <span className="text-gray-500 text-xs">$</span>
-                            </div>
-                            <input
-                              type="number"
-                              step={0.01}
-                              value={item[subField.field] || ''}
-                              onChange={(e) => handleArrayFieldChange(field, index, subField.field, parseFloat(e.target.value) || 0)}
-                              className="block w-full pl-6 pr-2 py-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs"
-                              placeholder={subField.placeholder}
-                            />
-                          </div>
-                        ) : subField.type === 'percentage' ? (
-                          <div className="relative mt-1">
-                            <input
-                              type="number"
-                              step={0.01}
-                              value={item[subField.field] || ''}
-                              onChange={(e) => handleArrayFieldChange(field, index, subField.field, parseFloat(e.target.value) || 0)}
-                              className="block w-full pr-6 pl-2 py-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs"
-                              placeholder={subField.placeholder}
-                            />
-                            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-                              <span className="text-gray-500 text-xs">%</span>
-                            </div>
-                          </div>
-                        ) : (
-                          <input
-                            type={subField.type === 'number' ? 'number' : 'text'}
-                            step={subField.type === 'number' ? 1 : undefined}
-                            value={item[subField.field] || ''}
-                            onChange={(e) => handleArrayFieldChange(field, index, subField.field, 
-                              subField.type === 'number' ? 
-                              parseFloat(e.target.value) || 0 : e.target.value)}
-                            className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-xs"
-                            placeholder={subField.placeholder}
-                          />
-                        )}
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              
-              <button
-                type="button"
-                onClick={() => addArrayItem(field)}
-                className="flex items-center text-blue-600 hover:text-blue-800 text-sm font-medium"
-              >
-                <PlusIcon className="h-4 w-4 mr-1" />
-                Add {label || field}
-              </button>
-            </div>
-            
-            {helperText && (
-              <p className="mt-2 text-xs text-gray-500">{helperText}</p>
-            )}
-          </div>
-        );
-        
-      default:
-        return null;
-    }
+
+  const toggleSection = (sectionId: string) => {
+    setExpandedSections(prev => ({
+      ...prev,
+      [sectionId]: !prev[sectionId]
+    }));
   };
-  
-  const renderLegacyField = (field: keyof PropertyData, isRequired: boolean = false) => {
-    // This is a fallback for legacy PropertyData fields
-    // We'll use basic input handling for now
-    const value = getFieldValue(field);
-    const isFilled = isFieldFilled(field);
-    
-    return (
-      <div key={field}>
-        <label className="block text-sm font-medium text-gray-700 flex items-center">
-          {String(field).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}
-          {isRequired && <span className="text-red-500 ml-1">*</span>}
-          {isFilled && <CheckIcon className="h-4 w-4 text-green-600 ml-2" />}
-        </label>
-        <input
-          type="number"
-          step={0.01}
-          value={value}
-          onChange={(e) => handleInputChange(field, parseFloat(e.target.value) || 0)}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-        />
-      </div>
+
+  const getSectionCompletion = (fields: string[]): number => {
+    const filledFields = fields.filter(isFieldFilled);
+    return fields.length > 0 ? Math.round((filledFields.length / fields.length) * 100) : 0;
+  };
+
+  // Field rendering functions
+  const renderField = (fieldName: string): React.ReactNode => {
+    const fieldDef = allFields.find(field => 
+      typeof field === 'object' ? field.field === fieldName : field === fieldName
     );
-  };
-  
-  // Count filled fields for progress
-  const allFields = [...requiredFields, ...optionalFields];
-  const filledCount = allFields.filter(field => 
-    isEnhancedFields ? isFieldFilled((field as FieldDefinition).field) : isFieldFilled(field as keyof PropertyData)
-  ).length;
-  const progressPercentage = allFields.length > 0 ? (filledCount / allFields.length) * 100 : 0;
-  
-  const loadSampleData = () => {
-    if (packageType && sampleData[packageType]) {
-      const sample = sampleData[packageType];
-      onChange({
-        ...data,
-        ...sample
-      });
-      
-      // Update array field state for any array fields in sample data
-      const newArrayState: ArrayFieldState = {};
-      Object.entries(sample).forEach(([key, value]) => {
-        if (Array.isArray(value)) {
-          newArrayState[key] = value;
-        }
-      });
-      
-      if (Object.keys(newArrayState).length > 0) {
-        setArrayFieldState(prev => ({
-          ...prev,
-          ...newArrayState
-        }));
-      }
+
+    if (typeof fieldDef === 'object') {
+      return renderEnhancedField(fieldDef);
+    } else {
+      return renderLegacyField(fieldName as keyof PropertyData);
     }
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-start">
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900">Enter Property Information</h2>
-          <p className="mt-2 text-gray-600">
-            Fill in the required fields to calculate your selected metrics
-          </p>
-        </div>
-        {packageType && sampleData[packageType] && (
+  const renderEnhancedField = (fieldDef: FieldDefinition): React.ReactNode => {
+    const { field, type, label, description, placeholder, helperText } = fieldDef;
+    const value = getFieldValue(field);
+    const error = errors[field];
+    const suggestion = getFieldSuggestion(field, data, packageType);
+
+    if (type === 'array') {
+      return renderArrayField(fieldDef);
+    }
+
+    return (
+      <div key={field} className="group">
+        <Input
+          label={label || field}
+          type={type === 'number' || type === 'currency' || type === 'percentage' ? 'number' : 'text'}
+          value={String(value || '')}
+          onChange={(val) => handleFieldChange(field, val)}
+          {...(error ? { error } : {})}
+          {...(helperText || description ? { helper: helperText || description } : {})}
+          required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
+          {...(type === 'currency' ? { formatAs: 'currency' as const } : 
+               type === 'percentage' ? { formatAs: 'percentage' as const } : {})}
+          {...(placeholder ? { placeholder } : {})}
+          success={Boolean(value) && !error}
+          floating
+          {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
+        />
+        
+        {/* Smart suggestion */}
+        {suggestion && !value && (
           <button
             type="button"
-            onClick={loadSampleData}
-            className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            onClick={() => handleFieldChange(field, suggestion)}
+            className="mt-2 text-sm text-primary-600 hover:text-primary-700 transition-colors"
           >
-            <BeakerIcon className="h-4 w-4 mr-2" />
-            Load Sample Data
+            💡 Suggested: {type === 'currency' ? `$${suggestion.toLocaleString()}` : 
+                          type === 'percentage' ? `${suggestion}%` : suggestion}
           </button>
         )}
       </div>
-      
-      {/* Progress Bar */}
-      <div>
-        <div className="flex justify-between text-sm text-gray-600 mb-2">
-          <span>Progress: {filledCount} of {allFields.length} fields completed</span>
-          <span>{Math.round(progressPercentage)}%</span>
+    );
+  };
+
+  const renderLegacyField = (field: keyof PropertyData): React.ReactNode => {
+    const value = getFieldValue(field);
+    const error = errors[field];
+    const suggestion = getFieldSuggestion(field, data, packageType);
+    const label = String(field).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+
+    return (
+      <div key={field} className="group">
+        <Input
+          label={label}
+          type="number"
+          value={String(value || '')}
+          onChange={(val) => handleFieldChange(field, val)}
+          {...(error ? { error } : {})}
+          required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
+          success={Boolean(value) && !error}
+          floating
+          {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
+        />
+        
+        {suggestion && !value && (
+          <button
+            type="button"
+            onClick={() => handleFieldChange(field, suggestion)}
+            className="mt-2 text-sm text-primary-600 hover:text-primary-700 transition-colors"
+          >
+            💡 Suggested: ${suggestion.toLocaleString()}
+          </button>
+        )}
+      </div>
+    );
+  };
+
+  const renderArrayField = (fieldDef: FieldDefinition): React.ReactNode => {
+    const { field, label, subFields } = fieldDef;
+    if (!subFields) return null;
+
+    const dataFromProps = data[field as keyof PropertyData];
+    const arrayItems = Array.isArray(dataFromProps) ? dataFromProps : (arrayFieldState[field] || []);
+
+    return (
+      <Card key={field} variant="bordered" className="mb-6">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <h3 className="text-lg font-semibold">{label || field}</h3>
+            <Button 
+              type="button"
+              variant="ghost" 
+              size="sm"
+              leftIcon={Plus}
+              onClick={() => addArrayItem(field)}
+            >
+              Add {label}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardBody>
+          {arrayItems.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+              <p>No {label?.toLowerCase()} added yet</p>
+              <Button 
+                type="button"
+                variant="secondary" 
+                size="sm" 
+                className="mt-3"
+                onClick={() => addArrayItem(field)}
+              >
+                Add First {label}
+              </Button>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {arrayItems.map((item, index) => (
+                <Card key={index} variant="glass">
+                  <CardBody>
+                    <div className="flex items-start justify-between mb-4">
+                      <Badge variant="primary">{label} {index + 1}</Badge>
+                      <button
+                        type="button"
+                        onClick={() => removeArrayItem(field, index)}
+                        className="text-gray-400 hover:text-red-500 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
+                    
+                    <div className="grid md:grid-cols-2 gap-4">
+                      {subFields.map((subField) => (
+                        <Input
+                          key={subField.field}
+                          label={subField.label || subField.field}
+                          type={subField.type === 'number' ? 'number' : 'text'}
+                          value={String(item[subField.field] || '')}
+                          onChange={(val) => handleArrayFieldChange(field, index, subField.field, val)}
+                          {...(subField.type === 'currency' ? { formatAs: 'currency' as const } : 
+                              subField.type === 'percentage' ? { formatAs: 'percentage' as const } : {})}
+                          floating
+                        />
+                      ))}
+                    </div>
+                  </CardBody>
+                </Card>
+              ))}
+            </div>
+          )}
+        </CardBody>
+      </Card>
+    );
+  };
+
+  // Progress calculation
+  const totalFields = allFields.length;
+  const completedFields = allFields.filter(field => 
+    isEnhancedFields ? isFieldFilled((field as FieldDefinition).field) : isFieldFilled(field as keyof PropertyData)
+  ).length;
+
+  // Form validation - could be used for disabling submit buttons
+  // const isFormValid = Object.keys(errors).every(key => !errors[key]) && 
+  //                    requiredFields.every(field => 
+  //                      isFieldFilled(typeof field === 'object' ? field.field : field)
+  //                    );
+
+  const propertyTypeTitle = packageType?.split('-')[0]?.charAt(0).toUpperCase() + 
+                           (packageType?.split('-')[0]?.slice(1) || '') || 'Property';
+
+  return (
+    <form className="max-w-4xl mx-auto">
+      {/* Progress indicator */}
+      <div className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm font-medium text-gray-700">
+            Form Completion
+          </span>
+          <span className="text-sm text-gray-600">
+            {completedFields} of {totalFields} fields
+          </span>
         </div>
-        <div className="bg-gray-200 rounded-full h-3 overflow-hidden">
+        <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
           <div 
-            className="bg-blue-600 h-full transition-all duration-300"
-            style={{ width: `${progressPercentage}%` }}
+            className="h-full bg-primary-600 transition-all duration-300 ease-out"
+            style={{ width: `${(completedFields / totalFields) * 100}%` }}
           />
         </div>
       </div>
       
-      {/* Required Fields */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-semibold text-gray-900">Required Fields</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {requiredFields.map((field) => 
-            isEnhancedFields ? 
-              renderEnhancedField(field as FieldDefinition, true) : 
-              renderLegacyField(field as keyof PropertyData, true)
-          )}
-        </div>
-      </div>
-      
-      {/* Optional Fields */}
-      {optionalFields.length > 0 && (
-        <div className="space-y-4">
-          <h3 className="text-lg font-semibold text-gray-900">Optional Fields</h3>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {optionalFields.map((field) => 
-              isEnhancedFields ? 
-                renderEnhancedField(field as FieldDefinition, false) : 
-                renderLegacyField(field as keyof PropertyData, false)
+      {/* Auto-save indicator */}
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-bold text-gray-900">
+          {propertyTypeTitle} Analysis Details
+        </h2>
+        {autoSaveStatus && (
+          <div className="flex items-center gap-2 text-sm text-gray-600">
+            {autoSaveStatus === 'saving' && (
+              <>
+                <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
+                <span>Saving...</span>
+              </>
+            )}
+            {autoSaveStatus === 'saved' && (
+              <>
+                <CheckCircle className="w-4 h-4 text-green-500" />
+                <span>Saved</span>
+              </>
             )}
           </div>
+        )}
+      </div>
+
+      {/* Grouped sections */}
+      {fieldGroups.map((group) => {
+        const Icon = group.icon;
+        const completion = getSectionCompletion(group.fields);
+        const isExpanded = expandedSections[group.id];
+
+        return (
+          <Card key={group.id} variant="bordered" className="mb-6">
+            <CardHeader 
+              className="cursor-pointer select-none"
+              onClick={() => toggleSection(group.id)}
+            >
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className={cn(
+                    "w-8 h-8 rounded-lg flex items-center justify-center",
+                    completion === 100
+                      ? "bg-green-100"
+                      : "bg-gray-100"
+                  )}>
+                    {completion === 100 ? (
+                      <Check className="w-4 h-4 text-green-600" />
+                    ) : (
+                      <Icon className="w-4 h-4 text-gray-600" />
+                    )}
+                  </div>
+                  <div>
+                    <h3 className="text-lg font-semibold text-gray-900">{group.name}</h3>
+                    {group.description && (
+                      <p className="text-sm text-gray-500">{group.description}</p>
+                    )}
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-sm text-gray-500">{completion}%</span>
+                  <ChevronDown className={cn(
+                    "w-5 h-5 text-gray-400 transition-transform",
+                    isExpanded && "rotate-180"
+                  )} />
+                </div>
+              </div>
+            </CardHeader>
+            
+            {isExpanded && (
+              <CardBody className="pt-0">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {group.fields.map((fieldName) => renderField(fieldName))}
+                </div>
+              </CardBody>
+            )}
+          </Card>
+        );
+      })}
+
+      {/* Form navigation */}
+      <div className="sticky bottom-0 bg-white border-t border-gray-200 mt-12 -mx-6 px-6 py-4">
+        <div className="max-w-4xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Button
+              type="button"
+              variant="ghost"
+              leftIcon={ArrowLeft}
+              onClick={() => window.history.back()}
+            >
+              Back
+            </Button>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              leftIcon={Save}
+              onClick={() => {
+                setAutoSaveStatus('saving');
+                const draftKey = `smartdeal-draft-${packageType || 'default'}`;
+                localStorage.setItem(draftKey, JSON.stringify(data));
+                setTimeout(() => setAutoSaveStatus('saved'), 300);
+              }}
+            >
+              Save Draft
+            </Button>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            {Object.keys(errors).length > 0 && (
+              <span className="text-sm text-red-600">
+                {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
+              </span>
+            )}
+            
+            <div className="text-sm text-gray-500">
+              Progress: {Math.round((completedFields / totalFields) * 100)}%
+            </div>
+          </div>
         </div>
-      )}
-    </div>
+      </div>
+    </form>
   );
 }

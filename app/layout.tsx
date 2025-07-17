@@ -6,7 +6,6 @@ import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 
 // Internal imports - Components
-import { NavBar } from "@/components/navigation/NavBar";
 import ErrorBoundary from "@/components/ErrorBoundary";
 
 const geistSans = Geist({
@@ -35,8 +34,7 @@ export default function RootLayout({
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
         <ErrorBoundary>
-          <NavBar />
-          <main className="min-h-screen bg-gray-50">
+          <main className="min-h-screen">
             {children}
           </main>
         </ErrorBoundary>
