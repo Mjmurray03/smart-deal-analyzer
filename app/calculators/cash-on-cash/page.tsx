@@ -5,23 +5,23 @@ import Link from 'next/link';
 import { ArrowLeftIcon, CalculatorIcon } from '@heroicons/react/24/outline';
 import { formatMetricValue } from '@/lib/calculations/metrics';
 import { Card, CardBody } from '@/components/ui/Card';
-import InputWithType from '@/components/ui/InputWithType';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import { Button } from '@/components/ui/Button';
 
 export default function CashOnCashCalculatorPage() {
-  const [annualCashFlow, setAnnualCashFlow] = useState<string>('');
-  const [cashInvested, setCashInvested] = useState<string>('');
+  const [annualCashFlow, setAnnualCashFlow] = useState<number | ''>('');
+  const [cashInvested, setCashInvested] = useState<number | ''>('');
   const [result, setResult] = useState<number | null>(null);
   const [errors, setErrors] = useState<{ annualCashFlow?: string; cashInvested?: string }>({});
 
   const validateInputs = () => {
     const newErrors: { annualCashFlow?: string; cashInvested?: string } = {};
     
-    if (!annualCashFlow || isNaN(Number(annualCashFlow))) {
+    if (annualCashFlow === '') {
       newErrors.annualCashFlow = 'Please enter a valid number for annual cash flow';
     }
     
-    if (!cashInvested || isNaN(Number(cashInvested)) || Number(cashInvested) <= 0) {
+    if (!cashInvested || cashInvested <= 0) {
       newErrors.cashInvested = 'Please enter a valid positive number for cash invested';
     }
     
@@ -31,8 +31,8 @@ export default function CashOnCashCalculatorPage() {
 
   const calculateCashOnCash = () => {
     if (validateInputs()) {
-      const cashFlowValue = Number(annualCashFlow);
-      const investedValue = Number(cashInvested);
+      const cashFlowValue = typeof annualCashFlow === 'number' ? annualCashFlow : 0;
+      const investedValue = typeof cashInvested === 'number' ? cashInvested : 0;
       const cashOnCashReturn = (cashFlowValue / investedValue) * 100;
       setResult(cashOnCashReturn);
     }
@@ -77,31 +77,29 @@ export default function CashOnCashCalculatorPage() {
           <CardBody>
             <div className="space-y-6">
               {/* Annual Cash Flow Input */}
-              <InputWithType
+              <CurrencyInput
                 id="annualCashFlow"
-                inputType="currency"
                 label="Annual Pre-Tax Cash Flow"
                 value={annualCashFlow}
-                onValueChange={(value) => setAnnualCashFlow(String(value))}
+                onChange={setAnnualCashFlow}
                 placeholder="Enter annual cash flow"
                 helper="NOI minus debt service"
-                {...(errors.annualCashFlow && { error: errors.annualCashFlow })}
-                showTypeIndicator={true}
+                {...(errors.annualCashFlow ? { error: errors.annualCashFlow } : {})}
                 floating
+                allowNegative={true}
               />
 
               {/* Cash Invested Input */}
-              <InputWithType
+              <CurrencyInput
                 id="cashInvested"
-                inputType="currency"
                 label="Total Cash Invested"
                 value={cashInvested}
-                onValueChange={(value) => setCashInvested(String(value))}
+                onChange={setCashInvested}
                 placeholder="Enter total cash invested"
                 helper="Down payment + closing costs + initial repairs"
-                {...(errors.cashInvested && { error: errors.cashInvested })}
-                showTypeIndicator={true}
+                {...(errors.cashInvested ? { error: errors.cashInvested } : {})}
                 floating
+                required
               />
 
               {/* Buttons */}

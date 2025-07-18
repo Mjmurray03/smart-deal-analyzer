@@ -8,7 +8,6 @@ import {
   Plus, 
   X, 
   Users, 
-  ArrowLeft, 
   Save,
   HelpCircle,
   TrendingUp,
@@ -192,11 +191,12 @@ export default function EnhancedDynamicInputForm({
   
   useEffect(() => {
     setExpandedSections(prev => {
-      // Only initialize if we don't have any sections set yet
+      // Initialize all sections as closed for consistent behavior
       const hasExistingSections = Object.keys(prev).length > 0;
       
-      if (!hasExistingSections && firstGroupId) {
-        return { [firstGroupId]: true };
+      if (!hasExistingSections) {
+        // Start with all sections closed
+        return {};
       }
       
       return prev;
@@ -296,7 +296,7 @@ export default function EnhancedDynamicInputForm({
 
   // Handle field changes with proper type conversion and safety
   const handleFieldChange = useCallback((fieldName: string, value: FieldValue) => {
-    // Safely handle value conversion
+    // Safely handle value conversion without aggressive numeric conversion
     let processedValue = value;
     
     // Check if this field should be a number
@@ -309,11 +309,14 @@ export default function EnhancedDynamicInputForm({
       fieldName.includes('Price') || fieldName.includes('Amount') || fieldName.includes('Rate') ||
       fieldName.includes('NOI') || fieldName.includes('Expenses') || fieldName.includes('Income');
     
-    // Safe numeric conversion
+    // Only convert to number if user has finished typing (avoid while typing conversion)
     if (isNumericField && value !== '' && value !== null && value !== undefined) {
       const stringValue = String(value);
-      const numericValue = parseFloat(stringValue.replace(/[^0-9.-]/g, ''));
-      processedValue = isNaN(numericValue) ? 0 : numericValue;
+      // Only convert if it's a complete number, not while typing
+      if (stringValue && !stringValue.endsWith('.') && !stringValue.endsWith('-')) {
+        const numericValue = parseFloat(stringValue.replace(/[^0-9.-]/g, ''));
+        processedValue = isNaN(numericValue) ? value : numericValue; // Keep original if invalid
+      }
     }
     
     // Validate field
@@ -355,6 +358,7 @@ export default function EnhancedDynamicInputForm({
     };
   }, [handleFieldChange]);
 
+  // Get appropriate input type based on field definition
 
   // Array field operations
   const handleArrayFieldChange = useCallback((fieldName: string, index: number, subField: string, value: unknown) => {
@@ -472,27 +476,27 @@ export default function EnhancedDynamicInputForm({
     }
 
     return (
-      <div key={field} className="group relative">
+      <div key={field} className="flex flex-col w-full space-y-2">
         <EnhancedInput
-          headerText={label || field}
-          value={String(value || '')}
-          onValueChange={createSafeOnChangeHandler(field)}
-          {...(error ? { error } : {})}
-          {...(helperText || description ? { helper: helperText || description } : {})}
-          required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
-          {...(placeholder ? { placeholder } : {})}
-          success={Boolean(value) && !error}
-          autoDetectType={true}
-          showTypeIndicator={true}
-          {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
-        />
+            headerText={label || field}
+            value={String(value || '')}
+            onValueChange={createSafeOnChangeHandler(field)}
+            {...(error ? { error } : {})}
+            {...(helperText || description ? { helper: helperText || description } : {})}
+            required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
+            {...(placeholder ? { placeholder } : {})}
+            success={Boolean(value) && !error}
+            autoDetectType={true}
+            showTypeIndicator={true}
+            {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
+          />
         
         {/* Smart suggestion with improved positioning */}
         {suggestion && !value && (
           <button
             type="button"
             onClick={() => handleFieldChange(field, suggestion)}
-            className="mt-3 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
+            className="text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
           >
             💡 Suggested: {typeof suggestion === 'number' ? suggestion.toLocaleString() : suggestion}
           </button>
@@ -508,24 +512,24 @@ export default function EnhancedDynamicInputForm({
     const label = String(field).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
 
     return (
-      <div key={field} className="group relative">
+      <div key={field} className="flex flex-col w-full space-y-2">
         <EnhancedInput
-          headerText={label}
-          value={String(value || '')}
-          onValueChange={createSafeOnChangeHandler(field)}
-          {...(error ? { error } : {})}
-          required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
-          success={Boolean(value) && !error}
-          autoDetectType={true}
-          showTypeIndicator={true}
-          {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
-        />
+            headerText={label}
+            value={String(value || '')}
+            onValueChange={createSafeOnChangeHandler(field)}
+            {...(error ? { error } : {})}
+            required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
+            success={Boolean(value) && !error}
+            autoDetectType={true}
+            showTypeIndicator={true}
+            {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
+          />
         
         {suggestion && !value && (
           <button
             type="button"
             onClick={() => handleFieldChange(field, suggestion)}
-            className="mt-3 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
+            className="text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
           >
             💡 Suggested: {typeof suggestion === 'number' ? suggestion.toLocaleString() : suggestion}
           </button>
@@ -628,9 +632,9 @@ export default function EnhancedDynamicInputForm({
                            (packageType?.split('-')[0]?.slice(1) || '') || 'Property';
 
   return (
-    <form className="max-w-4xl mx-auto pb-40">
-      {/* Progress indicator - improved positioning */}
-      <div className="mb-8 bg-white border border-gray-200 rounded-lg p-4 shadow-sm sticky top-0 z-40 backdrop-blur-sm bg-white/95">
+    <form className="w-full">
+      {/* Progress indicator - fixed positioning to prevent overlap */}
+      <div className="mb-8 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-gray-700">
             Form Completion
@@ -680,7 +684,7 @@ export default function EnhancedDynamicInputForm({
           return (
             <Card key={group.id} variant="bordered" className="transition-all duration-200 ease-in-out shadow-sm hover:shadow-md">
               <CardHeader 
-                className="cursor-pointer select-none hover:bg-gray-50 transition-colors relative z-10"
+                className="cursor-pointer select-none hover:bg-gray-50 transition-colors"
                 onClick={() => toggleSection(group.id)}
               >
                 <div className="flex items-center justify-between">
@@ -724,10 +728,10 @@ export default function EnhancedDynamicInputForm({
                 isExpanded ? "max-h-none opacity-100" : "max-h-0 opacity-0"
               )}>
                 {isExpanded && (
-                  <CardBody className="pt-0 pb-8 animate-in slide-in-from-top-2 duration-300">
-                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+                  <CardBody className="pt-6 pb-8">
+                    <div className="flex flex-col gap-6">
                       {group.fields.map((fieldName) => (
-                        <div key={fieldName} className="min-h-[130px] relative space-y-2">
+                        <div key={fieldName} className="w-full">
                           {renderField(fieldName)}
                         </div>
                       ))}
@@ -740,51 +744,39 @@ export default function EnhancedDynamicInputForm({
         })}
       </div>
 
-      {/* Form navigation */}
-      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="ghost"
-                leftIcon={ArrowLeft}
-                onClick={() => window.history.back()}
-                className="shrink-0"
-              >
-                Back
-              </Button>
-              
-              <Button
-                type="button"
-                variant="ghost"
-                leftIcon={Save}
-                onClick={() => {
-                  setAutoSaveStatus('saving');
-                  const draftKey = `smartdeal-draft-${packageType || 'default'}`;
-                  try {
-                    localStorage.setItem(draftKey, JSON.stringify(data));
-                  } catch (error) {
-                    console.error('Failed to save draft:', error);
-                  }
-                  setTimeout(() => setAutoSaveStatus('saved'), 300);
-                }}
-                className="shrink-0"
-              >
-                Save Draft
-              </Button>
-            </div>
+      {/* Progress Summary - Non-sticky */}
+      <div className="mt-8 p-4 bg-gray-50 rounded-lg">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-4">
+            <Button
+              type="button"
+              variant="ghost"
+              leftIcon={Save}
+              onClick={() => {
+                setAutoSaveStatus('saving');
+                const draftKey = `smartdeal-draft-${packageType || 'default'}`;
+                try {
+                  localStorage.setItem(draftKey, JSON.stringify(data));
+                } catch (error) {
+                  console.error('Failed to save draft:', error);
+                }
+                setTimeout(() => setAutoSaveStatus('saved'), 300);
+              }}
+              className="shrink-0"
+            >
+              Save Draft
+            </Button>
+          </div>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {Object.keys(errors).length > 0 && (
+              <span className="text-sm text-red-600 text-center">
+                {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
+              </span>
+            )}
             
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              {Object.keys(errors).length > 0 && (
-                <span className="text-sm text-red-600 text-center">
-                  {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
-                </span>
-              )}
-              
-              <div className="text-sm text-gray-500">
-                Progress: {Math.round((completedFields / totalFields) * 100)}%
-              </div>
+            <div className="text-sm text-gray-500">
+              Progress: {Math.round((completedFields / totalFields) * 100)}%
             </div>
           </div>
         </div>

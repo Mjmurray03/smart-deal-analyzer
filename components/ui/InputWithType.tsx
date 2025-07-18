@@ -96,13 +96,7 @@ const InputWithType = React.forwardRef<HTMLInputElement, InputWithTypeProps>(({
   const handleChange = (value: string | number) => {
     // Call the original onChange if provided
     if (onChange) {
-      // Create a synthetic event-like object for backward compatibility
-      const syntheticEvent = {
-        target: { value },
-        currentTarget: { value }
-      } as React.ChangeEvent<HTMLInputElement>;
-      
-      onChange(syntheticEvent);
+      onChange(value);
     }
     
     // Call the typed onValueChange handler

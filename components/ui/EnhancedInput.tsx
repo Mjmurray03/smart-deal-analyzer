@@ -31,11 +31,12 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(({
   const detectInputType = (): 'currency' | 'percentage' | 'number' | 'text' | 'date' | 'address' => {
     const text = (headerText || label || '').toLowerCase();
     
-    // Currency indicators
+    // Currency indicators - enhanced for better detection
     if (text.includes('price') || text.includes('amount') || text.includes('cost') || 
         text.includes('income') || text.includes('expense') || text.includes('fee') ||
         text.includes('noi') || text.includes('loan') || text.includes('cash') ||
-        text.includes('dollar') || text.includes('revenue') || text.includes('value')) {
+        text.includes('dollar') || text.includes('revenue') || text.includes('value') ||
+        text.includes('purchase') || text.includes('current') && text.includes('noi')) {
       return 'currency';
     }
     
@@ -57,10 +58,11 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(({
       return 'date';
     }
     
-    // Number indicators
+    // Number indicators - enhanced for SF detection
     if (text.includes('square') || text.includes('sf') || text.includes('footage') ||
         text.includes('unit') || text.includes('number of') || text.includes('count') ||
-        text.includes('term') || text.includes('age') || text.includes('floor')) {
+        text.includes('term') || text.includes('age') || text.includes('floor') ||
+        (text.includes('total') && text.includes('sf'))) {
       return 'number';
     }
     
@@ -129,23 +131,25 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(({
   const config = typeConfig[inputType];
   const IconComponent = config.icon;
 
-  // Enhanced header with proper spacing and z-index
+  // Enhanced header that stays above everything
   const enhancedHeader = headerText && (
-    <div className="relative z-10 mb-3">
-      <div className="flex items-center justify-between bg-white rounded-lg border border-gray-200 p-3 shadow-sm">
-        <div className="flex items-center gap-2">
-          <IconComponent className={cn("w-5 h-5", config.iconColor)} />
-          <h3 className="text-sm font-semibold text-gray-900">{headerText}</h3>
-        </div>
-        {showTypeIndicator && (
-          <div className={cn(
-            "inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium",
-            config.badgeColor
-          )}>
-            <IconComponent className="w-3 h-3" />
-            <span className="capitalize">{inputType === 'address' ? 'location' : inputType}</span>
+    <div className="mb-6 relative" style={{ zIndex: 9999 }}>
+      <div className="bg-white rounded-lg border-2 border-gray-300 p-4 shadow-md relative" style={{ zIndex: 9999 }}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <IconComponent className={cn("w-5 h-5", config.iconColor)} />
+            <h3 className="text-lg font-semibold text-gray-900">{headerText}</h3>
           </div>
-        )}
+          {showTypeIndicator && (
+            <div className={cn(
+              "inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium",
+              config.badgeColor
+            )}>
+              <IconComponent className="w-3 h-3" />
+              <span className="capitalize">{inputType === 'address' ? 'location' : inputType}</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
@@ -168,13 +172,7 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(({
   const handleChange = (value: string | number) => {
     // Call the original onChange if provided
     if (onChange) {
-      // Create a synthetic event-like object for backward compatibility
-      const syntheticEvent = {
-        target: { value },
-        currentTarget: { value }
-      } as React.ChangeEvent<HTMLInputElement>;
-      
-      onChange(syntheticEvent);
+      onChange(value);
     }
     
     // Call the typed onValueChange handler
@@ -191,8 +189,10 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(({
     type: config.type,
     onChange: handleChange,
     className: cn(
-      // Ensure proper spacing from header
-      headerText && "mt-0",
+      // Ensure proper spacing from header and better typography
+      headerText && "mt-2",
+      "text-base font-normal", // Improved typography
+      "p-3", // Better padding
       // Add subtle border color based on input type for better visual distinction
       inputType === 'currency' && "focus:border-green-500 focus:ring-green-500/10",
       inputType === 'percentage' && "focus:border-blue-500 focus:ring-blue-500/10",
@@ -220,9 +220,9 @@ const EnhancedInput = React.forwardRef<HTMLInputElement, EnhancedInputProps>(({
   }
 
   return (
-    <div className="w-full">
+    <div className="w-full mb-4">
       {enhancedHeader}
-      <div className="relative z-0">
+      <div className="relative" style={{ zIndex: 1 }}>
         <Input {...baseInputProps} {...conditionalProps} />
         
         {/* Render complex label separately for header mode */}

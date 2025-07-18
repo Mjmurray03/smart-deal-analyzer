@@ -5,12 +5,12 @@ import Link from 'next/link';
 import { ArrowLeftIcon, CalculatorIcon } from '@heroicons/react/24/outline';
 import { formatMetricValue } from '@/lib/calculations/metrics';
 import { Card, CardBody } from '@/components/ui/Card';
-import InputWithType from '@/components/ui/InputWithType';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import { Button } from '@/components/ui/Button';
 
 export default function GRMCalculatorPage() {
-  const [purchasePrice, setPurchasePrice] = useState<string>('');
-  const [monthlyRent, setMonthlyRent] = useState<string>('');
+  const [purchasePrice, setPurchasePrice] = useState<number | ''>('');
+  const [monthlyRent, setMonthlyRent] = useState<number | ''>('');
   const [result, setResult] = useState<number | null>(null);
   const [annualRent, setAnnualRent] = useState<number | null>(null);
   const [errors, setErrors] = useState<{ purchasePrice?: string; monthlyRent?: string }>({});
@@ -18,11 +18,11 @@ export default function GRMCalculatorPage() {
   const validateInputs = () => {
     const newErrors: { purchasePrice?: string; monthlyRent?: string } = {};
     
-    if (!purchasePrice || isNaN(Number(purchasePrice)) || Number(purchasePrice) <= 0) {
+    if (!purchasePrice || purchasePrice <= 0) {
       newErrors.purchasePrice = 'Please enter a valid positive number for purchase price';
     }
     
-    if (!monthlyRent || isNaN(Number(monthlyRent)) || Number(monthlyRent) <= 0) {
+    if (!monthlyRent || monthlyRent <= 0) {
       newErrors.monthlyRent = 'Please enter a valid positive number for monthly rent';
     }
     
@@ -32,8 +32,8 @@ export default function GRMCalculatorPage() {
 
   const calculateGRM = () => {
     if (validateInputs()) {
-      const priceValue = Number(purchasePrice);
-      const monthlyRentValue = Number(monthlyRent);
+      const priceValue = typeof purchasePrice === 'number' ? purchasePrice : 0;
+      const monthlyRentValue = typeof monthlyRent === 'number' ? monthlyRent : 0;
       const annualRentValue = monthlyRentValue * 12;
       const grm = priceValue / annualRentValue;
       setResult(grm);
@@ -81,31 +81,29 @@ export default function GRMCalculatorPage() {
           <CardBody>
             <div className="space-y-6">
               {/* Purchase Price Input */}
-              <InputWithType
+              <CurrencyInput
                 id="purchasePrice"
-                inputType="currency"
                 label="Purchase Price"
                 value={purchasePrice}
-                onValueChange={(value) => setPurchasePrice(String(value))}
+                onChange={setPurchasePrice}
                 placeholder="Enter purchase price"
                 helper="Total purchase price of the property"
-                {...(errors.purchasePrice && { error: errors.purchasePrice })}
-                showTypeIndicator={true}
+                {...(errors.purchasePrice ? { error: errors.purchasePrice } : {})}
                 floating
+                required
               />
 
               {/* Monthly Rent Input */}
-              <InputWithType
+              <CurrencyInput
                 id="monthlyRent"
-                inputType="currency"
                 label="Total Monthly Rent"
                 value={monthlyRent}
-                onValueChange={(value) => setMonthlyRent(String(value))}
+                onChange={setMonthlyRent}
                 placeholder="Enter total monthly rent"
                 helper="Combined rent from all units"
-                {...(errors.monthlyRent && { error: errors.monthlyRent })}
-                showTypeIndicator={true}
+                {...(errors.monthlyRent ? { error: errors.monthlyRent } : {})}
                 floating
+                required
               />
 
               {/* Buttons */}

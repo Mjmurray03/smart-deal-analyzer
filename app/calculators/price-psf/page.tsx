@@ -5,23 +5,24 @@ import Link from 'next/link';
 import { ArrowLeftIcon, CalculatorIcon } from '@heroicons/react/24/outline';
 import { formatMetricValue } from '@/lib/calculations/metrics';
 import { Card, CardBody } from '@/components/ui/Card';
-import InputWithType from '@/components/ui/InputWithType';
+import CurrencyInput from '@/components/ui/CurrencyInput';
+import Input from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 
 export default function PricePSFCalculatorPage() {
-  const [price, setPrice] = useState<string>('');
-  const [squareFeet, setSquareFeet] = useState<string>('');
+  const [price, setPrice] = useState<number | ''>('');
+  const [squareFeet, setSquareFeet] = useState<number | ''>('');
   const [result, setResult] = useState<number | null>(null);
   const [errors, setErrors] = useState<{ price?: string; squareFeet?: string }>({});
 
   const validateInputs = () => {
     const newErrors: { price?: string; squareFeet?: string } = {};
     
-    if (!price || isNaN(Number(price)) || Number(price) <= 0) {
+    if (!price || price <= 0) {
       newErrors.price = 'Please enter a valid positive number for price';
     }
     
-    if (!squareFeet || isNaN(Number(squareFeet)) || Number(squareFeet) <= 0) {
+    if (!squareFeet || squareFeet <= 0) {
       newErrors.squareFeet = 'Please enter a valid positive number for square feet';
     }
     
@@ -31,8 +32,8 @@ export default function PricePSFCalculatorPage() {
 
   const calculatePricePSF = () => {
     if (validateInputs()) {
-      const priceValue = Number(price);
-      const sqftValue = Number(squareFeet);
+      const priceValue = typeof price === 'number' ? price : 0;
+      const sqftValue = typeof squareFeet === 'number' ? squareFeet : 0;
       const pricePerSF = priceValue / sqftValue;
       setResult(pricePerSF);
     }
@@ -77,31 +78,33 @@ export default function PricePSFCalculatorPage() {
           <CardBody>
             <div className="space-y-6">
               {/* Price Input */}
-              <InputWithType
+              <CurrencyInput
                 id="price"
-                inputType="currency"
                 label="Total Price"
                 value={price}
-                onValueChange={(value) => setPrice(String(value))}
+                onChange={setPrice}
                 placeholder="Enter total price"
                 helper="Total purchase or sale price of the property"
-                {...(errors.price && { error: errors.price })}
-                showTypeIndicator={true}
+                {...(errors.price ? { error: errors.price } : {})}
                 floating
+                required
               />
 
               {/* Square Feet Input */}
-              <InputWithType
+              <Input
                 id="squareFeet"
-                inputType="number"
+                type="number"
                 label="Total Square Feet"
-                value={squareFeet}
-                onValueChange={(value) => setSquareFeet(String(value))}
+                value={String(squareFeet || '')}
+                onChange={(value) => {
+                  const numValue = parseFloat(String(value));
+                  setSquareFeet(isNaN(numValue) ? '' : numValue);
+                }}
                 placeholder="Enter total square feet"
                 helper="Total square footage of the property"
-                {...(errors.squareFeet && { error: errors.squareFeet })}
-                showTypeIndicator={true}
+                {...(errors.squareFeet ? { error: errors.squareFeet } : {})}
                 floating
+                required
               />
 
               {/* Buttons */}

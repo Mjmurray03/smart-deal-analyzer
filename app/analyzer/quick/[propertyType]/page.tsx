@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useMemo } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
@@ -10,8 +10,7 @@ import { quickPackages } from '@/lib/calculations/packages';
 import EnhancedDynamicInputForm from '@/components/calculator/EnhancedDynamicInputForm';
 import { InlineLoader, ContentTransition } from '@/components/ui/LoadingStates';
 import { FormSectionSkeleton } from '@/components/ui/Skeleton';
-import { useLoadingState } from '@/lib/hooks/useLoadingState';
-import { useNavigationGuard } from '@/lib/hooks/useNavigationGuard';
+// Removed useLoadingState - using direct state management
 
 interface FieldObject {
   field: string;
@@ -20,18 +19,12 @@ interface FieldObject {
 
 export default function QuickAnalysisPropertyPage() {
   const params = useParams();
-  const { navigate } = useNavigationGuard({
-    debounceMs: 300,
-    maxRetries: 3,
-    onNavigationError: (error) => {
-      console.error('Navigation failed:', error);
-    }
-  });
+  const router = useRouter();
   
   const propertyType = params.propertyType as string;
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [metricFlags, setMetricFlags] = useState<MetricFlags>({} as MetricFlags);
-  const { isLoading, execute } = useLoadingState();
+  const [isLoading, setIsLoading] = useState(false);
   
   const [propertyData, setPropertyData] = useState<Partial<PropertyData>>({
     propertyType: propertyType as PropertyType
@@ -64,12 +57,17 @@ export default function QuickAnalysisPropertyPage() {
     setPropertyData(prev => ({ ...prev, ...data }));
   }, []);
 
-  // Memoized calculation handler to prevent unnecessary re-renders
+  // Direct calculation handler without execute wrapper
   const handleCalculate = useCallback(async () => {
     const selectedPkg = packages.find(pkg => pkg.id === selectedPackage);
-    if (!selectedPkg) return;
+    if (!selectedPkg) {
+      console.error('No package selected');
+      return;
+    }
 
-    await execute(async () => {
+    setIsLoading(true);
+    
+    try {
       // Validate required fields (support both enhanced and legacy formats)
       const missingFields = selectedPkg.requiredFields.filter((field: unknown) => {
         let fieldName: string;
@@ -92,24 +90,38 @@ export default function QuickAnalysisPropertyPage() {
         const fieldNames = missingFields.map((field: unknown) => 
           typeof field === 'object' && field !== null && 'field' in field ? (field as FieldObject).field : field as string
         );
-        throw new Error(`Please fill in the following required fields: ${fieldNames.join(', ')}`);
+        alert(`Please fill in the following required fields: ${fieldNames.join(', ')}`);
+        setIsLoading(false);
+        return;
       }
 
       // Calculate metrics with package ID for enhanced package support
       const enhancedPropertyData = {
         ...propertyData,
-        selectedPackageId: selectedPackage
+        selectedPackageId: selectedPackage,
+        propertyType: propertyType
       } as PropertyData;
       
-      // Simulate processing time
-      await new Promise(resolve => setTimeout(resolve, 1000));
+      console.log('About to navigate with data:', enhancedPropertyData);
       
-      // Use navigation guard to prevent infinite loops
-      const dataParam = encodeURIComponent(JSON.stringify(enhancedPropertyData));
-      const flagsParam = encodeURIComponent(JSON.stringify(metricFlags));
-      navigate(`/analyzer/${propertyType}/results?data=${dataParam}&flags=${flagsParam}`);
-    });
-  }, [packages, selectedPackage, execute, propertyData, metricFlags, navigate, propertyType]);
+      // Store data in sessionStorage (what results page expects)
+      sessionStorage.setItem('propertyData', JSON.stringify(enhancedPropertyData));
+      sessionStorage.setItem('metricFlags', JSON.stringify(metricFlags));
+      sessionStorage.setItem('packageType', selectedPackage || 'quick');
+      sessionStorage.setItem('propertyType', propertyType);
+      sessionStorage.setItem('analysisType', 'quick');
+      
+      console.log('Stored data in sessionStorage, navigating to results');
+      
+      // Navigate to results page
+      router.push(`/analyzer/${propertyType}/results`);
+    } catch (error) {
+      console.error('Calculation error:', error);
+      alert(`Calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [packages, selectedPackage, propertyData, metricFlags, router, propertyType]);
 
   // Effect to update property data when property type changes
   useEffect(() => {
@@ -244,14 +256,14 @@ export default function QuickAnalysisPropertyPage() {
           </h1>
         </div>
 
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-4xl mx-auto">
           {/* Input Form */}
           <ContentTransition
             isLoading={false}
             loadingComponent={<FormSectionSkeleton />}
           >
-            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">Property Information</h2>
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 min-h-[600px] overflow-auto">
+              <h2 className="text-lg font-semibold text-gray-900 mb-6">Property Information</h2>
               <EnhancedDynamicInputForm
                 requiredFields={selectedPackageData.requiredFields as (keyof PropertyData)[]}
                 optionalFields={selectedPackageData.optionalFields as (keyof PropertyData)[]}
@@ -259,23 +271,23 @@ export default function QuickAnalysisPropertyPage() {
                 onChange={handleDataChange}
                 packageType={selectedPackage}
               />
-              
-              {/* Calculate Button */}
-              <div className="mt-6 pt-6 border-t">
-                <button
-                  onClick={handleCalculate}
-                  disabled={isLoading}
-                  className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-                >
-                  {isLoading && <InlineLoader size="sm" />}
-                  {isLoading ? 'Calculating...' : `Calculate ${selectedPackageData.name}`}
-                </button>
-                <p className="text-sm text-gray-500 mt-3 text-center">
-                  {isLoading ? 'Processing your data...' : "You'll be redirected to a comprehensive results dashboard"}
-                </p>
-              </div>
             </div>
           </ContentTransition>
+          
+          {/* Calculate Button - Outside the form container */}
+          <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <button
+              onClick={handleCalculate}
+              disabled={isLoading}
+              className="w-full bg-blue-600 text-white py-4 px-6 rounded-lg hover:bg-blue-700 transition-colors duration-200 font-semibold disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 text-lg"
+            >
+              {isLoading && <InlineLoader size="sm" />}
+              {isLoading ? 'Calculating...' : `Calculate ${selectedPackageData.name}`}
+            </button>
+            <p className="text-sm text-gray-500 mt-3 text-center">
+              {isLoading ? 'Processing your data...' : "You'll be redirected to a comprehensive results dashboard"}
+            </p>
+          </div>
         </div>
       </div>
     </main>

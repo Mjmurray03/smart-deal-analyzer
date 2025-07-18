@@ -5,7 +5,7 @@ import { LucideIcon, Check, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useReducedMotion, useFocusAnimation } from '@/lib/animations';
 
-interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size' | 'onChange'> {
   variant?: 'default' | 'filled' | 'flushed' | 'unstyled';
   size?: 'sm' | 'md' | 'lg';
   label?: string;
@@ -25,7 +25,7 @@ interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'>
   decimals?: number;
   // Backward compatibility props
   helperText?: string;
-  onChange?: (value: any) => void;
+  onChange?: (value: string | number) => void;
 }
 
 const Input = forwardRef<HTMLInputElement, InputProps>(({
@@ -44,6 +44,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   suffix,
   floating = false,
   formatAs,
+  // Note: currencySymbol and decimals kept for compatibility but not used
   currencySymbol = '$',
   allowNegative = false,
   decimals = 2,
@@ -153,36 +154,13 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
 
   const sizeConfig = sizeVariants[size];
 
-  // Format value based on formatAs prop
+  // Format value based on formatAs prop - minimal formatting to preserve user input
   const formatValue = useCallback((val: string | number): string => {
     if (!val && val !== 0) return '';
     
     const stringVal = String(val);
     
     switch (formatAs) {
-      case 'currency':
-        const numVal = parseFloat(stringVal.replace(/[^0-9.-]/g, ''));
-        if (isNaN(numVal)) return '';
-        return new Intl.NumberFormat('en-US', {
-          style: 'currency',
-          currency: 'USD',
-          minimumFractionDigits: decimals,
-          maximumFractionDigits: decimals,
-        }).format(numVal).replace('$', currencySymbol);
-        
-      case 'percentage':
-        const percentVal = parseFloat(stringVal.replace(/[^0-9.-]/g, ''));
-        if (isNaN(percentVal)) return '';
-        return `${percentVal}%`;
-        
-      case 'number':
-        const numberVal = parseFloat(stringVal.replace(/[^0-9.-]/g, ''));
-        if (isNaN(numberVal)) return '';
-        return new Intl.NumberFormat('en-US', {
-          minimumFractionDigits: 0,
-          maximumFractionDigits: decimals,
-        }).format(numberVal);
-        
       case 'phone':
         const phoneVal = stringVal.replace(/\D/g, '');
         if (phoneVal.length <= 3) return phoneVal;
@@ -190,11 +168,12 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
         return `(${phoneVal.slice(0, 3)}) ${phoneVal.slice(3, 6)}-${phoneVal.slice(6, 10)}`;
         
       default:
+        // For currency, percentage, number - return as-is to avoid forced formatting
         return stringVal;
     }
-  }, [formatAs, currencySymbol, decimals]);
+  }, [formatAs]);
 
-  // Handle input changes with formatting
+  // Handle input changes with simplified formatting
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
     
@@ -208,14 +187,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
     setInternalValue(newValue);
     setHasValue(!!newValue);
     
-    // Call original onChange with appropriate value
+    // Call original onChange with the raw value to prevent incorrect number display
     if (onChange) {
-      if (type === 'number' || formatAs === 'number' || formatAs === 'currency') {
-        const numValue = parseFloat(newValue.replace(/[^0-9.-]/g, ''));
-        onChange(isNaN(numValue) ? '' : numValue);
-      } else {
-        onChange(newValue);
-      }
+      onChange(newValue);
     }
   };
 
@@ -229,8 +203,8 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
     setIsFocused(false);
     focusProps.onBlur();
     
-    // Format value on blur
-    if (formatAs && internalValue) {
+    // Only format phone numbers on blur to avoid forced currency formatting
+    if (formatAs === 'phone' && internalValue) {
       const formatted = formatValue(String(internalValue));
       setInternalValue(formatted);
     }

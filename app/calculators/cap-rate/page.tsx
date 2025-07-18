@@ -5,23 +5,23 @@ import Link from 'next/link';
 import { ArrowLeftIcon, CalculatorIcon } from '@heroicons/react/24/outline';
 import { formatMetricValue } from '@/lib/calculations/metrics';
 import { Card, CardBody } from '@/components/ui/Card';
-import InputWithType from '@/components/ui/InputWithType';
+import CurrencyInput from '@/components/ui/CurrencyInput';
 import { Button } from '@/components/ui/Button';
 
 export default function CapRateCalculatorPage() {
-  const [noi, setNoi] = useState<string>('');
-  const [purchasePrice, setPurchasePrice] = useState<string>('');
+  const [noi, setNoi] = useState<number | ''>('');
+  const [purchasePrice, setPurchasePrice] = useState<number | ''>('');
   const [result, setResult] = useState<number | null>(null);
   const [errors, setErrors] = useState<{ noi?: string; purchasePrice?: string }>({});
 
   const validateInputs = () => {
     const newErrors: { noi?: string; purchasePrice?: string } = {};
     
-    if (!noi || isNaN(Number(noi)) || Number(noi) <= 0) {
+    if (!noi || noi <= 0) {
       newErrors.noi = 'Please enter a valid positive number for NOI';
     }
     
-    if (!purchasePrice || isNaN(Number(purchasePrice)) || Number(purchasePrice) <= 0) {
+    if (!purchasePrice || purchasePrice <= 0) {
       newErrors.purchasePrice = 'Please enter a valid positive number for purchase price';
     }
     
@@ -31,8 +31,8 @@ export default function CapRateCalculatorPage() {
 
   const calculateCapRate = () => {
     if (validateInputs()) {
-      const noiValue = Number(noi);
-      const priceValue = Number(purchasePrice);
+      const noiValue = typeof noi === 'number' ? noi : 0;
+      const priceValue = typeof purchasePrice === 'number' ? purchasePrice : 0;
       const capRate = (noiValue / priceValue) * 100;
       setResult(capRate);
     }
@@ -77,31 +77,29 @@ export default function CapRateCalculatorPage() {
           <CardBody>
             <div className="space-y-6">
               {/* NOI Input */}
-              <InputWithType
+              <CurrencyInput
                 id="noi"
-                inputType="currency"
                 label="Net Operating Income (NOI)"
                 value={noi}
-                onValueChange={(value) => setNoi(String(value))}
+                onChange={setNoi}
                 placeholder="Enter annual NOI"
                 helper="Enter the annual net operating income for the property"
-                {...(errors.noi && { error: errors.noi })}
-                showTypeIndicator={true}
+                {...(errors.noi ? { error: errors.noi } : {})}
                 floating
+                required
               />
 
               {/* Purchase Price Input */}
-              <InputWithType
+              <CurrencyInput
                 id="purchasePrice"
-                inputType="currency"
                 label="Purchase Price"
                 value={purchasePrice}
-                onValueChange={(value) => setPurchasePrice(String(value))}
+                onChange={setPurchasePrice}
                 placeholder="Enter purchase price"
                 helper="Enter the total purchase price of the property"
-                {...(errors.purchasePrice && { error: errors.purchasePrice })}
-                showTypeIndicator={true}
+                {...(errors.purchasePrice ? { error: errors.purchasePrice } : {})}
                 floating
+                required
               />
 
               {/* Buttons */}

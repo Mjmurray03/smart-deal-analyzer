@@ -87,6 +87,9 @@ export default function ResultsPage() {
   useEffect(() => {
     const propertyDataParam = sessionStorage.getItem('propertyData');
     const packageTypeParam = sessionStorage.getItem('packageType');
+    const analysisTypeParam = sessionStorage.getItem('analysisType');
+    
+    console.log('Results page loading with data:', { propertyDataParam, packageTypeParam, analysisTypeParam });
     
     if (propertyDataParam && packageTypeParam) {
       // Simulate progressive calculation stages
@@ -189,7 +192,10 @@ export default function ResultsPage() {
               setIsLoading(false);
             }, 300);
           } catch (error) {
-            console.error('Error parsing parameters:', error);
+            console.error('Error parsing parameters or calculating metrics:', error);
+            console.error('Property data was:', propertyDataParam);
+            console.error('Package type was:', packageTypeParam);
+            alert(`Error loading results: ${error instanceof Error ? error.message : 'Unknown error'}`);
             setIsLoading(false);
           }
         }

@@ -47,47 +47,64 @@ export default function AdvancedAnalysisPropertyPage() {
     setPropertyData(prev => ({ ...prev, ...data }));
   };
 
-  const handleCalculate = () => {
+  const handleCalculate = async () => {
     const selectedPkg = packages.find(pkg => pkg.id === selectedPackage);
-    if (!selectedPkg) return;
-
-    // Validate required fields (support both enhanced and legacy formats)
-    const missingFields = selectedPkg.requiredFields.filter((field: unknown) => {
-      let fieldName: string;
-      let value: unknown;
-      
-      // Check if this is an enhanced field definition or legacy field name
-      if (typeof field === 'object' && field !== null && 'field' in field) {
-        fieldName = (field as FieldObject).field;
-        value = propertyData[fieldName as keyof PropertyData];
-      } else {
-        fieldName = field as string;
-        value = propertyData[fieldName as keyof PropertyData];
-      }
-      
-      return value === undefined || value === null || value === '' || 
-             (Array.isArray(value) && value.length === 0);
-    });
-
-    if (missingFields.length > 0) {
-      const fieldNames = missingFields.map((field: unknown) => 
-        typeof field === 'object' && field !== null && 'field' in field ? (field as FieldObject).field : field as string
-      );
-      alert(`Please fill in the following required fields: ${fieldNames.join(', ')}`);
+    if (!selectedPkg) {
+      console.error('No package selected');
       return;
     }
 
-    // Calculate metrics with package ID for enhanced package support
-    const enhancedPropertyData = {
-      ...propertyData,
-      selectedPackageId: selectedPackage
-    } as PropertyData;
-    
-    
-    // Navigate to results page with data
-    const dataParam = encodeURIComponent(JSON.stringify(enhancedPropertyData));
-    const flagsParam = encodeURIComponent(JSON.stringify(metricFlags));
-    router.push(`/analyzer/${propertyType}/results?data=${dataParam}&flags=${flagsParam}`);
+    try {
+      // Validate required fields (support both enhanced and legacy formats)
+      const missingFields = selectedPkg.requiredFields.filter((field: unknown) => {
+        let fieldName: string;
+        let value: unknown;
+        
+        // Check if this is an enhanced field definition or legacy field name
+        if (typeof field === 'object' && field !== null && 'field' in field) {
+          fieldName = (field as FieldObject).field;
+          value = propertyData[fieldName as keyof PropertyData];
+        } else {
+          fieldName = field as string;
+          value = propertyData[fieldName as keyof PropertyData];
+        }
+        
+        return value === undefined || value === null || value === '' || 
+               (Array.isArray(value) && value.length === 0);
+      });
+
+      if (missingFields.length > 0) {
+        const fieldNames = missingFields.map((field: unknown) => 
+          typeof field === 'object' && field !== null && 'field' in field ? (field as FieldObject).field : field as string
+        );
+        alert(`Please fill in the following required fields: ${fieldNames.join(', ')}`);
+        return;
+      }
+
+      // Calculate metrics with package ID for enhanced package support
+      const enhancedPropertyData = {
+        ...propertyData,
+        selectedPackageId: selectedPackage,
+        propertyType: propertyType
+      } as PropertyData;
+      
+      console.log('Storing data for results page:', enhancedPropertyData);
+      
+      // Store data in sessionStorage (what results page expects)
+      sessionStorage.setItem('propertyData', JSON.stringify(enhancedPropertyData));
+      sessionStorage.setItem('metricFlags', JSON.stringify(metricFlags));
+      sessionStorage.setItem('packageType', selectedPackage || 'advanced');
+      sessionStorage.setItem('propertyType', propertyType);
+      sessionStorage.setItem('analysisType', 'advanced');
+      
+      console.log('Stored data in sessionStorage, navigating to results');
+      
+      // Navigate to results page
+      router.push(`/analyzer/${propertyType}/results`);
+    } catch (error) {
+      console.error('Calculation error:', error);
+      alert(`Calculation failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+    }
   };
 
   const getPackageIcon = (packageName: string) => {
@@ -244,9 +261,9 @@ export default function AdvancedAnalysisPropertyPage() {
           </h1>
         </div>
 
-        <div className="max-w-5xl mx-auto">
+        <div className="max-w-6xl mx-auto">
           {/* Input Form */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8 min-h-[600px] overflow-auto">
             <div className="flex items-center justify-between mb-6">
               <h2 className="text-xl font-semibold text-gray-900">Property Data Input</h2>
               <div className="text-sm text-gray-500">
@@ -260,19 +277,19 @@ export default function AdvancedAnalysisPropertyPage() {
               onChange={handleDataChange}
               packageType={selectedPackage}
             />
-            
-            {/* Calculate Button */}
-            <div className="mt-6 pt-6 border-t">
-              <button
-                onClick={handleCalculate}
-                className="w-full bg-indigo-600 text-white py-3 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-semibold"
-              >
-                Calculate {selectedPackageData.name}
-              </button>
-              <p className="text-sm text-gray-500 mt-3 text-center">
-                You&apos;ll be redirected to a comprehensive results dashboard
-              </p>
-            </div>
+          </div>
+          
+          {/* Calculate Button - Outside the form container */}
+          <div className="mt-6 bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+            <button
+              onClick={handleCalculate}
+              className="w-full bg-indigo-600 text-white py-4 px-6 rounded-lg hover:bg-indigo-700 transition-colors duration-200 font-semibold text-lg"
+            >
+              Calculate {selectedPackageData.name}
+            </button>
+            <p className="text-sm text-gray-500 mt-3 text-center">
+              You&apos;ll be redirected to a comprehensive results dashboard
+            </p>
           </div>
         </div>
       </div>
