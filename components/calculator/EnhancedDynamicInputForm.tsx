@@ -45,6 +45,12 @@ interface FieldGroup {
   description?: string;
 }
 
+// Type for field values to replace 'any'
+type FieldValue = string | number | boolean | null | undefined;
+
+// Type for validation function value parameter
+type ValidationValue = string | number | boolean | Array<unknown> | Record<string, unknown> | null | undefined;
+
 type AutoSaveStatus = 'saving' | 'saved' | null;
 
 // Enhanced field configuration with smart grouping
@@ -173,26 +179,29 @@ export default function EnhancedDynamicInputForm({
   // Combine all fields for processing
   const allFields = useMemo(() => [...requiredFields, ...optionalFields], [requiredFields, optionalFields]);
   
-  // Create field groups
-  const fieldGroups = useMemo(() => 
-    getFieldGroups(allFields), 
-    [allFields]
-  );
+  // Create field groups with stable reference
+  const fieldGroups = useMemo(() => {
+    return getFieldGroups(allFields);
+  }, [allFields]);
 
   // Initialize expanded sections (first section open by default)
+  // Memoize the first group ID to prevent re-initialization
+  const firstGroupId = useMemo(() => {
+    return fieldGroups.length > 0 && fieldGroups[0] ? fieldGroups[0].id : null;
+  }, [fieldGroups]);
+  
   useEffect(() => {
     setExpandedSections(prev => {
       // Only initialize if we don't have any sections set yet
       const hasExistingSections = Object.keys(prev).length > 0;
-      const hasFieldGroups = fieldGroups.length > 0;
       
-      if (!hasExistingSections && hasFieldGroups && fieldGroups[0]) {
-        return { [fieldGroups[0].id]: true };
+      if (!hasExistingSections && firstGroupId) {
+        return { [firstGroupId]: true };
       }
       
       return prev;
     });
-  }, []); // Run only once on mount
+  }, [firstGroupId]); // Now depends on stable firstGroupId
 
   // Auto-save functionality with debouncing
   useEffect(() => {
@@ -223,8 +232,23 @@ export default function EnhancedDynamicInputForm({
   }, [data, hasChanges, packageType]);
 
   // Field validation
-  const validateField = useCallback((fieldName: string, value: any): string | null => {
-    if (!value && value !== 0) return null;
+  const validateField = useCallback((fieldName: string, value: ValidationValue): string | null => {
+    if (value === null || value === undefined || value === '') return null;
+    if (typeof value === 'number' && value === 0) {
+      // Allow zero values for validation
+    } else if (!value) {
+      return null;
+    }
+    
+    // Helper to determine if field should be numeric
+    const isNumericField = allFields.some(field => {
+      const currentFieldName = typeof field === 'object' ? field.field : field;
+      return currentFieldName === fieldName && (
+        (typeof field === 'object' && (field.type === 'number' || field.type === 'currency' || field.type === 'percentage')) ||
+        currentFieldName.includes('Price') || currentFieldName.includes('Amount') || currentFieldName.includes('Rate') ||
+        currentFieldName.includes('NOI') || currentFieldName.includes('Expenses') || currentFieldName.includes('Income')
+      );
+    });
 
     // Get field definition
     const fieldDef = allFields.find(field => 
@@ -233,17 +257,19 @@ export default function EnhancedDynamicInputForm({
 
     if (typeof fieldDef === 'object' && fieldDef.validation) {
       const { min, max } = fieldDef.validation;
-      const numValue = parseFloat(value);
+      const numValue = typeof value === 'string' ? parseFloat(value) : Number(value);
       
-      if (min && numValue < min) {
-        return `Value must be at least ${min.toLocaleString()}`;
-      }
-      if (max && numValue > max) {
-        return `Value cannot exceed ${max.toLocaleString()}`;
+      if (!isNaN(numValue)) {
+        if (min !== undefined && numValue < min) {
+          return `Value must be at least ${min.toLocaleString()}`;
+        }
+        if (max !== undefined && numValue > max) {
+          return `Value cannot exceed ${max.toLocaleString()}`;
+        }
       }
     }
 
-    // Type-specific validation
+      // Type-specific validation
     if (typeof value === 'number') {
       if (fieldName.includes('Rate') || fieldName.includes('rate')) {
         if (value < 0 || value > 100) {
@@ -255,13 +281,21 @@ export default function EnhancedDynamicInputForm({
           return 'Amount cannot be negative';
         }
       }
+    } else if (typeof value === 'string') {
+      // String validation for numeric fields
+      if (isNumericField && value !== '') {
+        const numValue = parseFloat(value);
+        if (isNaN(numValue)) {
+          return 'Please enter a valid number';
+        }
+      }
     }
 
     return null;
   }, [allFields]);
 
   // Handle field changes with proper type conversion
-  const handleFieldChange = useCallback((fieldName: string, value: any) => {
+  const handleFieldChange = useCallback((fieldName: string, value: FieldValue) => {
     // Convert value to appropriate type
     let processedValue = value;
     
@@ -275,8 +309,9 @@ export default function EnhancedDynamicInputForm({
       fieldName.includes('Price') || fieldName.includes('Amount') || fieldName.includes('Rate') ||
       fieldName.includes('NOI') || fieldName.includes('Expenses') || fieldName.includes('Income');
     
-    if (isNumericField && value !== '') {
-      processedValue = parseFloat(value) || 0;
+    if (isNumericField && value !== '' && value !== null && value !== undefined) {
+      const stringValue = String(value);
+      processedValue = parseFloat(stringValue) || 0;
     }
     
     // Validate field
