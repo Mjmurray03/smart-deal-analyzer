@@ -87,7 +87,7 @@ export default function CapRateCalculatorPage() {
                     id="noi"
                     type="number"
                     value={noi}
-                    onChange={(e) => setNoi(e.target.value)}
+                    onChange={(value) => setNoi(String(value))}
                     placeholder="Enter annual NOI"
                     className="pl-8"
                     {...(errors.noi && { error: errors.noi })}
@@ -109,7 +109,7 @@ export default function CapRateCalculatorPage() {
                     id="purchasePrice"
                     type="number"
                     value={purchasePrice}
-                    onChange={(e) => setPurchasePrice(e.target.value)}
+                    onChange={(value) => setPurchasePrice(String(value))}
                     placeholder="Enter purchase price"
                     className="pl-8"
                     {...(errors.purchasePrice && { error: errors.purchasePrice })}

@@ -36,7 +36,8 @@
       "mcp__ide__executeCode",
       "Bash(npm run:*)",
       "Bash(mkdir:*)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(npm test:*)"
     ],
     "deny": []
   }

@@ -91,7 +91,7 @@ export default function GRMCalculatorPage() {
                     id="purchasePrice"
                     type="number"
                     value={purchasePrice}
-                    onChange={(e) => setPurchasePrice(e.target.value)}
+                    onChange={(value) => setPurchasePrice(String(value))}
                     placeholder="Enter purchase price"
                     className="pl-8"
                     {...(errors.purchasePrice && { error: errors.purchasePrice })}
@@ -113,7 +113,7 @@ export default function GRMCalculatorPage() {
                     id="monthlyRent"
                     type="number"
                     value={monthlyRent}
-                    onChange={(e) => setMonthlyRent(e.target.value)}
+                    onChange={(value) => setMonthlyRent(String(value))}
                     placeholder="Enter total monthly rent"
                     className="pl-8"
                     {...(errors.monthlyRent && { error: errors.monthlyRent })}

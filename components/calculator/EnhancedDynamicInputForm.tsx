@@ -181,24 +181,20 @@ export default function EnhancedDynamicInputForm({
 
   // Initialize expanded sections (first section open by default)
   useEffect(() => {
-    // Only set expanded sections once on initial render or when fieldGroups changes structure
-    // Use JSON.stringify to compare structure rather than reference
-    const fieldGroupsKey = JSON.stringify(fieldGroups.map(group => group.id));
-    
-    setExpandedSections(prevState => {
-      // If we already have expanded sections and the structure hasn't changed, keep current state
-      if (Object.keys(prevState).length > 0) {
-        return prevState;
+    setExpandedSections(prev => {
+      // Only initialize if we don't have any sections set yet
+      const hasExistingSections = Object.keys(prev).length > 0;
+      const hasFieldGroups = fieldGroups.length > 0;
+      
+      if (!hasExistingSections && hasFieldGroups && fieldGroups[0]) {
+        return { [fieldGroups[0].id]: true };
       }
       
-      // Otherwise initialize with first section expanded
-      return fieldGroups.length > 0 && fieldGroups[0] 
-        ? { [fieldGroups[0].id]: true }
-        : {};
+      return prev;
     });
-  }, [fieldGroups.length]); // Only depend on the length, not the entire fieldGroups object
+  }, []); // Run only once on mount
 
-  // Auto-save functionality
+  // Auto-save functionality with debouncing
   useEffect(() => {
     if (!hasChanges) return;
 
@@ -207,15 +203,20 @@ export default function EnhancedDynamicInputForm({
       
       // Save to localStorage
       const draftKey = `smartdeal-draft-${packageType || 'default'}`;
-      localStorage.setItem(draftKey, JSON.stringify(data));
-      
-      setTimeout(() => {
-        setAutoSaveStatus('saved');
-        setHasChanges(false);
+      try {
+        localStorage.setItem(draftKey, JSON.stringify(data));
         
-        // Clear saved status after 3 seconds
-        setTimeout(() => setAutoSaveStatus(null), 3000);
-      }, 500);
+        setTimeout(() => {
+          setAutoSaveStatus('saved');
+          setHasChanges(false);
+          
+          // Clear saved status after 3 seconds
+          setTimeout(() => setAutoSaveStatus(null), 3000);
+        }, 500);
+      } catch (error) {
+        console.error('Failed to save draft:', error);
+        setAutoSaveStatus(null);
+      }
     }, 2000); // 2 second delay
 
     return () => clearTimeout(timeoutId);
@@ -259,23 +260,45 @@ export default function EnhancedDynamicInputForm({
     return null;
   }, [allFields]);
 
-  // Handle field changes
+  // Handle field changes with proper type conversion
   const handleFieldChange = useCallback((fieldName: string, value: any) => {
+    // Convert value to appropriate type
+    let processedValue = value;
+    
+    // Check if this field should be a number
+    const fieldDef = allFields.find(field => 
+      typeof field === 'object' ? field.field === fieldName : field === fieldName
+    );
+    
+    const isNumericField = (typeof fieldDef === 'object' && 
+      (fieldDef.type === 'number' || fieldDef.type === 'currency' || fieldDef.type === 'percentage')) ||
+      fieldName.includes('Price') || fieldName.includes('Amount') || fieldName.includes('Rate') ||
+      fieldName.includes('NOI') || fieldName.includes('Expenses') || fieldName.includes('Income');
+    
+    if (isNumericField && value !== '') {
+      processedValue = parseFloat(value) || 0;
+    }
+    
     // Validate field
-    const error = validateField(fieldName, value);
-    setErrors(prev => ({
-      ...prev,
-      [fieldName]: error || ''
-    }));
+    const error = validateField(fieldName, processedValue);
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      if (error) {
+        newErrors[fieldName] = error;
+      } else {
+        delete newErrors[fieldName];
+      }
+      return newErrors;
+    });
 
     // Update data
     onChange({
       ...data,
-      [fieldName]: value,
+      [fieldName]: processedValue,
     });
 
     setHasChanges(true);
-  }, [data, onChange, validateField]);
+  }, [data, onChange, validateField, allFields]);
 
   // Array field operations
   const handleArrayFieldChange = useCallback((fieldName: string, index: number, subField: string, value: unknown) => {
@@ -357,12 +380,12 @@ export default function EnhancedDynamicInputForm({
     return false;
   };
 
-  const toggleSection = (sectionId: string) => {
+  const toggleSection = useCallback((sectionId: string) => {
     setExpandedSections(prev => ({
       ...prev,
       [sectionId]: !prev[sectionId]
     }));
-  };
+  }, []);
 
   const getSectionCompletion = (fields: string[]): number => {
     const filledFields = fields.filter(isFieldFilled);
@@ -398,7 +421,7 @@ export default function EnhancedDynamicInputForm({
           label={label || field}
           type={type === 'number' || type === 'currency' || type === 'percentage' ? 'number' : 'text'}
           value={String(value || '')}
-          onChange={(val) => handleFieldChange(field, val)}
+          onChange={(e) => handleFieldChange(field, e.target.value)}
           {...(error ? { error } : {})}
           {...(helperText || description ? { helper: helperText || description } : {})}
           required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
@@ -437,7 +460,7 @@ export default function EnhancedDynamicInputForm({
           label={label}
           type="number"
           value={String(value || '')}
-          onChange={(val) => handleFieldChange(field, val)}
+          onChange={(e) => handleFieldChange(field, e.target.value)}
           {...(error ? { error } : {})}
           required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
           success={Boolean(value) && !error}
@@ -679,7 +702,11 @@ export default function EnhancedDynamicInputForm({
                 onClick={() => {
                   setAutoSaveStatus('saving');
                   const draftKey = `smartdeal-draft-${packageType || 'default'}`;
-                  localStorage.setItem(draftKey, JSON.stringify(data));
+                  try {
+                    localStorage.setItem(draftKey, JSON.stringify(data));
+                  } catch (error) {
+                    console.error('Failed to save draft:', error);
+                  }
                   setTimeout(() => setAutoSaveStatus('saved'), 300);
                 }}
                 className="shrink-0"

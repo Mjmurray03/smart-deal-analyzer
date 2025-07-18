@@ -87,7 +87,7 @@ export default function PricePSFCalculatorPage() {
                     id="price"
                     type="number"
                     value={price}
-                    onChange={(e) => setPrice(e.target.value)}
+                    onChange={(value) => setPrice(String(value))}
                     placeholder="Enter total price"
                     className="pl-8"
                     {...(errors.price && { error: errors.price })}
@@ -107,7 +107,7 @@ export default function PricePSFCalculatorPage() {
                   id="squareFeet"
                   type="number"
                   value={squareFeet}
-                  onChange={(e) => setSquareFeet(e.target.value)}
+                  onChange={(value) => setSquareFeet(String(value))}
                   placeholder="Enter total square feet"
                   {...(errors.squareFeet && { error: errors.squareFeet })}
                 />

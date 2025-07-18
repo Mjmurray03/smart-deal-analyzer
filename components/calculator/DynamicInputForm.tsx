@@ -2,11 +2,11 @@
 
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
-import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { Input } from '@/components/ui/Input';
 import { PropertyData } from '@/lib/types';
 import { quickPackages, propertyPackages as allPropertyPackages } from '@/lib/calculations/packages';
 import { ArrowRight, Save } from 'lucide-react';
+import { FormContainer, FormSection, FormGrid, StickyFormActions } from '@/components/ui/FormLayouts';
 
 interface DynamicInputFormProps {
   propertyType: string;
@@ -149,7 +149,7 @@ export function DynamicInputForm({ propertyType, packageId, onSubmit }: DynamicI
     const label = getFieldLabel(field);
     
     return (
-      <div key={field} className="space-y-2">
+      <div key={field} className="relative">
         <Input
           label={label}
           type="number"
@@ -209,7 +209,7 @@ export function DynamicInputForm({ propertyType, packageId, onSubmit }: DynamicI
   const progressPercentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
   
   return (
-    <div className="max-w-4xl mx-auto pb-32">
+    <FormContainer hasBottomNavigation>
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -241,68 +241,63 @@ export function DynamicInputForm({ propertyType, packageId, onSubmit }: DynamicI
       <form onSubmit={handleSubmit} className="space-y-6">
         {/* Form fields grouped by category */}
         {Object.entries(fieldGroups).map(([groupName, fields]) => (
-          <Card key={groupName} variant="bordered" className="overflow-visible">
-            <CardHeader className="pb-4">
-              <h3 className="text-lg font-semibold text-gray-900">{groupName}</h3>
-            </CardHeader>
-            
-            <CardBody className="pt-2">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
-                {fields.map((field) => renderField(field))}
-              </div>
-            </CardBody>
-          </Card>
+          <FormSection 
+            key={groupName} 
+            title={groupName} 
+            bordered
+            spacing="md"
+          >
+            <FormGrid columns={2} gap="md">
+              {fields.map((field) => renderField(field))}
+            </FormGrid>
+          </FormSection>
         ))}
         
         {/* Submit button */}
-        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
-          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-              <div className="flex items-center gap-4">
-                <Button
-                  type="button"
-                  variant="ghost"
-                  onClick={() => window.history.back()}
-                  className="shrink-0"
-                >
-                  Back
-                </Button>
-                
-                <Button
-                  type="button"
-                  variant="ghost"
-                  leftIcon={Save}
-                  onClick={() => {
-                    localStorage.setItem(`smartdeal-draft-${packageId}`, JSON.stringify(formData));
-                  }}
-                  className="shrink-0"
-                >
-                  Save Draft
-                </Button>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row items-center gap-4">
-                {Object.keys(errors).length > 0 && (
-                  <span className="text-sm text-red-600 text-center">
-                    {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
-                  </span>
-                )}
-                
-                <Button
-                  type="submit"
-                  size="lg"
-                  rightIcon={ArrowRight}
-                  disabled={isSubmitting}
-                  isLoading={isSubmitting}
-                  className="w-full sm:w-auto"
-                >
-                  {isSubmitting ? 'Analyzing...' : 'Analyze Property'}
-                </Button>
-              </div>
-            </div>
+        <StickyFormActions>
+          <div className="flex items-center gap-4">
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => window.history.back()}
+              className="shrink-0"
+            >
+              Back
+            </Button>
+            
+            <Button
+              type="button"
+              variant="ghost"
+              leftIcon={Save}
+              onClick={() => {
+                localStorage.setItem(`smartdeal-draft-${packageId}`, JSON.stringify(formData));
+              }}
+              className="shrink-0"
+            >
+              Save Draft
+            </Button>
           </div>
-        </div>
+          
+          <div className="flex flex-col sm:flex-row items-center gap-4">
+            {Object.keys(errors).length > 0 && (
+              <span className="text-sm text-red-600 text-center">
+                {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
+              </span>
+            )}
+            
+            <Button
+              type="submit"
+              size="lg"
+              rightIcon={ArrowRight}
+              disabled={isSubmitting}
+              isLoading={isSubmitting}
+              className="w-full sm:w-auto"
+            >
+              {isSubmitting ? 'Analyzing...' : 'Analyze Property'}
+            </Button>
+          </div>
+        </StickyFormActions>
       </form>
-    </div>
+    </FormContainer>
   );
 }

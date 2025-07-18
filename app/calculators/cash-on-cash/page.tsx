@@ -87,7 +87,7 @@ export default function CashOnCashCalculatorPage() {
                     id="annualCashFlow"
                     type="number"
                     value={annualCashFlow}
-                    onChange={(e) => setAnnualCashFlow(e.target.value)}
+                    onChange={(value) => setAnnualCashFlow(String(value))}
                     placeholder="Enter annual cash flow"
                     className="pl-8"
                     {...(errors.annualCashFlow && { error: errors.annualCashFlow })}
@@ -112,7 +112,7 @@ export default function CashOnCashCalculatorPage() {
                     id="cashInvested"
                     type="number"
                     value={cashInvested}
-                    onChange={(e) => setCashInvested(e.target.value)}
+                    onChange={(value) => setCashInvested(String(value))}
                     placeholder="Enter total cash invested"
                     className="pl-8"
                     {...(errors.cashInvested && { error: errors.cashInvested })}
