@@ -6,7 +6,7 @@ import type { PropertyRequirements as BasePropertyRequirements } from '../../typ
 
 // ==================== TYPE DEFINITIONS ====================
 
-export interface PropertyRequirements extends BasePropertyRequirements {
+export interface IndustrialPropertyRequirements extends BasePropertyRequirements {
   idealPowerPerSF?: number;
   minPowerPerSF?: number;
   idealDockRatio?: number;
@@ -379,7 +379,7 @@ export function analyzeBuildingFunctionality(
   
   const employeeParkingRatio = totalParkingNeeded / totalEmployees;
   const trailerParkingRatio = totalTrailerParking / specs.dockDoors;
-  const columnEfficiency = calculateColumnEfficiency(columnWidth, columnDepth, specs.totalSF);
+  const columnEfficiency = calculateColumnEfficiency(columnWidth || 0, columnDepth || 0, specs.totalSF);
   
   return {
     functionalScore: {
@@ -1070,10 +1070,25 @@ uniqueAdvantages
 
 // ==================== HELPER FUNCTIONS ====================
 
-interface PropertyRequirements { minClearHeight: number; idealClearHeight: number; minDockRatio: number; idealDockRatio: number; minColumnSpacing: number; idealColumnSpacing: number; minTruckTurning: number; idealTruckTurning: number; minTrailerStorageDepth: number; idealTrailerStorageDepth: number; minOfficeRatio: number; idealOfficeRatio: number; }
+interface LocalPropertyRequirements { 
+  minClearHeight: number; 
+  idealClearHeight: number; 
+  minDockRatio: number; 
+  idealDockRatio: number; 
+  minColumnSpacing?: number; 
+  idealColumnSpacing?: number; 
+  minTruckTurning?: number; 
+  idealTruckTurning?: number; 
+  minTrailerStorageDepth?: number; 
+  idealTrailerStorageDepth?: number; 
+  minOfficeRatio?: number; 
+  idealOfficeRatio?: number;
+  idealPowerPerSF?: number;
+  minPowerPerSF?: number;
+}
 
-function getPropertyTypeRequirements(propertyType: string): PropertyRequirements | null {
-const requirements: Record<string, PropertyRequirements> = {
+function getPropertyTypeRequirements(propertyType: string): LocalPropertyRequirements | null {
+const requirements: Record<string, LocalPropertyRequirements> = {
 'Warehouse': {
 minClearHeight: 24,
 idealClearHeight: 32,

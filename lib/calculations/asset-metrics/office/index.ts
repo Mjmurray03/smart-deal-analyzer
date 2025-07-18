@@ -397,7 +397,7 @@ export function analyzeTenantFinancialHealth(
   let weightedCreditScore = 0;
   let investmentGradeCount = 0;
   let publicCompanyCount = 0;
-  const watchList: { tenant: string; reason: string[]; riskLevel: 'High' | 'Medium' | 'Low' }[] = [];
+  const watchList: { tenant: string; reason: string[]; riskLevel: 'High' | 'Medium' | 'Low'; recommendedAction: string; }[] = [];
 
   tenants.forEach(tenant => {
     const currentRent = tenant.baseRentSchedule[0]?.annualRent || 0;
@@ -425,7 +425,8 @@ export function analyzeTenantFinancialHealth(
       watchList.push({
         tenant: tenant.tenantName,
         reason: reasons,
-        riskLevel: tenant.financialStrength === 'Weak' ? 'High' : 'Medium'
+        riskLevel: tenant.financialStrength === 'Weak' ? 'High' : 'Medium',
+        recommendedAction: tenant.financialStrength === 'Weak' ? 'Immediate review required' : 'Monitor closely'
       });
     }
   });
@@ -595,7 +596,7 @@ export function analyzeLeaseEconomics(
 
 export function analyzeBuildingOperations(
   building: BuildingOperations,
-  tenants: OfficeTenant[],
+  _tenants: OfficeTenant[],
   propertyAge: number,
   totalSF: number
 ): {
@@ -872,7 +873,7 @@ function isInvestmentGrade(rating?: string): boolean {
   return ['AAA', 'AA', 'A', 'BBB'].includes(rating || '');
 }
 
-function getIndustryOutlookFromMarket(industry: string, marketData: MarketIntelligence): 'Growing' | 'Stable' | 'Declining' {
+function getIndustryOutlookFromMarket(industry: string, _marketData: MarketIntelligence): 'Growing' | 'Stable' | 'Declining' {
   // Simplified industry outlook based on current market trends
   const growingIndustries = ['Technology', 'Healthcare', 'Professional Services', 'Financial Services'];
   const decliningIndustries = ['Traditional Retail', 'Print Media', 'Coal', 'Traditional Manufacturing'];
@@ -957,7 +958,7 @@ function calculateWaterEfficiency(building: BuildingOperations): number {
   return Math.min(100, Math.max(0, efficiency));
 }
 
-function calculateWasteEfficiency(building: BuildingOperations): number {
+function calculateWasteEfficiency(_building: BuildingOperations): number {
   let efficiency = 65; // Base efficiency
   
   efficiency += 15; // Assume basic recycling program
@@ -977,7 +978,7 @@ function calculateIndoorEnvironment(building: BuildingOperations): number {
   return Math.min(100, Math.max(0, score));
 }
 
-function analyzeSystemsCondition(building: BuildingOperations, propertyAge: number): any[] {
+function analyzeSystemsCondition(_building: BuildingOperations, propertyAge: number): any[] {
   const systems = [
     { name: 'HVAC', condition: propertyAge < 10 ? 'Good' : propertyAge < 20 ? 'Fair' : 'Poor' },
     { name: 'Electrical', condition: propertyAge < 15 ? 'Good' : propertyAge < 30 ? 'Fair' : 'Poor' },
@@ -1011,7 +1012,7 @@ export function calculateRetentionProbability(
   let probability = 0.7;
   
   if (tenant.baseRentSchedule.length > 0) {
-    const rentVsMarket = tenant.baseRentSchedule[0].rentPSF / marketConditions.avgRent;
+    const rentVsMarket = (tenant.baseRentSchedule[0]?.rentPSF || 0) / marketConditions.avgRent;
     if (rentVsMarket < 0.9) probability += 0.15;
     else if (rentVsMarket > 1.1) probability -= 0.15;
   }

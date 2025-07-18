@@ -1,5 +1,7 @@
 'use client';
 import Link from 'next/link';
+
+export const dynamic = 'force-dynamic';
 import { ArrowRightIcon, BuildingOfficeIcon, BuildingStorefrontIcon, BuildingOffice2Icon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 
@@ -96,8 +98,6 @@ export default function QuickAnalysisPage() {
               key={type.id}
               href={`/analyzer/quick/${type.id}`}
               className={`p-6 rounded-xl shadow-sm hover:shadow-md transition-all duration-200 ${getColorClasses(type.color)}`}
-              onClick={() => {
-              }}
             >
               <div className="flex items-center mb-3">
                 <type.icon className="h-8 w-8 mr-3" />

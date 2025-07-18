@@ -114,15 +114,17 @@ export const SkeletonGroup: React.FC<SkeletonGroupProps> = ({
       {React.Children.map(children, (child, index) => {
         if (!React.isValidElement(child)) return child;
         
-        return React.cloneElement(child, {
-          ...child.props,
-          style: {
-            ...child.props.style,
-            ...(stagger && !reducedMotion && {
-              animationDelay: `${index * 100}ms`,
-              animationFillMode: 'both'
-            })
-          }
+        const existingStyle = ((child.props as any)?.style as React.CSSProperties) || {};
+        const newStyle = {
+          ...existingStyle,
+          ...(stagger && !reducedMotion && {
+            animationDelay: `${index * 100}ms`,
+            animationFillMode: 'both'
+          })
+        };
+        
+        return React.cloneElement(child as React.ReactElement<any>, {
+          style: newStyle
         });
       })}
     </div>

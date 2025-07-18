@@ -205,7 +205,7 @@ export default function ResultsPage() {
     
     // Return empty cleanup function if no data
     return () => {};
-  }, []);
+  }, [propertyType]);
 
   // Calculate assessment based on metrics
   const getAssessment = (): AssessmentData => {

@@ -1,5 +1,7 @@
 'use client';
 import Link from 'next/link';
+
+export const dynamic = 'force-dynamic';
 import { ArrowRightIcon, BuildingOfficeIcon, BuildingStorefrontIcon, BuildingOffice2Icon, ChartBarIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
 
@@ -131,8 +133,6 @@ export default function AdvancedAnalysisPage() {
               <Link 
                 href={`/analyzer/advanced/${type.id}`}
                 className="inline-flex items-center w-full justify-center px-6 py-3 text-lg font-semibold text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors duration-200"
-                onClick={() => {
-                }}
               >
                 Start {type.name} Analysis
                 <ArrowRightIcon className="ml-2 h-5 w-5" />

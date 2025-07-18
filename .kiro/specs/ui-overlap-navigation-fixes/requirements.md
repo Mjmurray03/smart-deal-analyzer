@@ -2,7 +2,19 @@
 
 ## Introduction
 
-The Smart Deal Analyzer project is experiencing UI overlap issues in calculation-specific pages where input fields, titles, and subheaders are overlapping, causing formatting problems. Additionally, there's a "Maximum update depth exceeded" error occurring during navigation between pages, likely due to problematic useEffect hooks in Next.js components. These issues need to be resolved while preserving the calculation logic and maintaining TypeScript compatibility with Tailwind CSS styling.
+The Smart Deal Analyzer project is experiencing several critical issues that need immediate resolution:
+
+1. **Maximum update depth exceeded** error in `components/calculator/EnhancedDynamicInputForm.tsx` at line 185, caused by a useEffect hook updating setExpandedSections with fieldGroups as a dependency, creating infinite re-render loops.
+
+2. **Server Component event handler errors** in `app/layout.tsx` and other components where event handlers are being passed to Client Component props, violating Next.js 13+ App Router constraints.
+
+3. **Undefined 'value' property errors** in `app/calculators/cap-rate/page.tsx` at lines 90 and 112, occurring in onChange handlers for NOI and purchasePrice inputs.
+
+4. **Incorrect validation logic** in the cap-rate calculator that displays "Please enter a valid positive number for NOI" even for valid inputs like 3030, preventing proper form submission.
+
+5. **General UI overlap issues** in calculation-specific pages where input fields, titles, and subheaders are overlapping, causing formatting problems.
+
+These issues need to be resolved while preserving the calculation logic in `lib/calculations/` and maintaining TypeScript compatibility with Tailwind CSS styling.
 
 ## Requirements
 

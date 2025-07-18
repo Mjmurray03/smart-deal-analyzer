@@ -140,7 +140,6 @@ export function analyzeMixedUsePerformance(
 } {
   // Calculate total metrics
   const totalNOI = components.reduce((sum, c) => sum + c.noi, 0);
-  const totalSF = components.reduce((sum, c) => sum + c.squareFootage, 0);
   const totalRevenue = components.reduce((sum, c) => {
     const occupiedSF = c.squareFootage * c.occupancy / 100;
     return sum + (c.rentPSF ? c.rentPSF * occupiedSF * 12 : c.noi / 0.6); // Assume 60% margin if no rent data

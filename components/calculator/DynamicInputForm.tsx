@@ -209,7 +209,7 @@ export function DynamicInputForm({ propertyType, packageId, onSubmit }: DynamicI
   const progressPercentage = totalFields > 0 ? Math.round((completedFields / totalFields) * 100) : 0;
   
   return (
-    <div className="max-w-4xl mx-auto">
+    <div className="max-w-4xl mx-auto pb-32">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -247,7 +247,7 @@ export function DynamicInputForm({ propertyType, packageId, onSubmit }: DynamicI
             </CardHeader>
             
             <CardBody className="pt-2">
-              <div className="grid md:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4 md:gap-6">
                 {fields.map((field) => renderField(field))}
               </div>
             </CardBody>
@@ -255,45 +255,50 @@ export function DynamicInputForm({ propertyType, packageId, onSubmit }: DynamicI
         ))}
         
         {/* Submit button */}
-        <div className="sticky bottom-0 bg-white border-t border-gray-200 -mx-6 px-6 py-4">
-          <div className="max-w-4xl mx-auto flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="ghost"
-                onClick={() => window.history.back()}
-              >
-                Back
-              </Button>
+        <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+          <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={() => window.history.back()}
+                  className="shrink-0"
+                >
+                  Back
+                </Button>
+                
+                <Button
+                  type="button"
+                  variant="ghost"
+                  leftIcon={Save}
+                  onClick={() => {
+                    localStorage.setItem(`smartdeal-draft-${packageId}`, JSON.stringify(formData));
+                  }}
+                  className="shrink-0"
+                >
+                  Save Draft
+                </Button>
+              </div>
               
-              <Button
-                type="button"
-                variant="ghost"
-                leftIcon={Save}
-                onClick={() => {
-                  localStorage.setItem(`smartdeal-draft-${packageId}`, JSON.stringify(formData));
-                }}
-              >
-                Save Draft
-              </Button>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              {Object.keys(errors).length > 0 && (
-                <span className="text-sm text-red-600">
-                  {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
-                </span>
-              )}
-              
-              <Button
-                type="submit"
-                size="lg"
-                rightIcon={ArrowRight}
-                disabled={isSubmitting}
-                isLoading={isSubmitting}
-              >
-                {isSubmitting ? 'Analyzing...' : 'Analyze Property'}
-              </Button>
+              <div className="flex flex-col sm:flex-row items-center gap-4">
+                {Object.keys(errors).length > 0 && (
+                  <span className="text-sm text-red-600 text-center">
+                    {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
+                  </span>
+                )}
+                
+                <Button
+                  type="submit"
+                  size="lg"
+                  rightIcon={ArrowRight}
+                  disabled={isSubmitting}
+                  isLoading={isSubmitting}
+                  className="w-full sm:w-auto"
+                >
+                  {isSubmitting ? 'Analyzing...' : 'Analyze Property'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>

@@ -478,13 +478,8 @@ export function analyzeCoTenancy(
   });
   
   // Critical mass analysis
-  const essentialTenants = tenants.filter(t => 
-    t.essentialService || t.category === 'Anchor' || (t.salesPSF || 0) > 500
-  );
   
   // Essential tenant assessment
-  const essentialTenantSF = essentialTenants.reduce((sum, t) => sum + (t.leasedSF || 0), 0);
-  const essentialTenantPercentage = (essentialTenantSF / totalGLA) * 100;
   
   // Minimum occupancy varies by center type
   const minimumOccupancy = totalGLA > 500000 ? 85 : 
@@ -549,9 +544,7 @@ export function analyzeCoTenancy(
       currentStatus: criticalMassStatus,
       minimumOccupancy,
       cushion: Number(cushion.toFixed(2)),
-      vulnerableTenants,
-      essentialTenants: essentialTenants.map(t => t.tenantName),
-      essentialTenantPercentage: Number(essentialTenantPercentage.toFixed(2))
+      vulnerableTenants
     },
     tenantSynergies
   };
@@ -1130,7 +1123,6 @@ export function analyzeExpenseRecovery(
   }
   
   // Admin fee opportunity (typically 10-15% of recoverable expenses)
-  const currentAdminFee = 0; // Assume not charging
   const adminFeeOpportunity = recoverableExpenses * 0.10;
   
   optimizationStrategies.push({
@@ -1364,17 +1356,6 @@ export function analyzeRedevelopmentPotential(
 
 // ==================== HELPER FUNCTIONS ====================
 
-function getIdealOCR(merchandiseType: string, centerType: string): number {
-  const ocrMatrix: Record<string, Record<string, number>> = {
-    'Apparel': { 'Regional Mall': 13, 'Lifestyle': 12, 'Strip': 10, 'Power': 8, 'Outlet': 10 },
-    'Food': { 'Regional Mall': 8, 'Lifestyle': 7, 'Strip': 6, 'Power': 6, 'Outlet': 7 },
-    'Entertainment': { 'Regional Mall': 10, 'Lifestyle': 9, 'Strip': 8, 'Power': 8, 'Outlet': 9 },
-    'Service': { 'Regional Mall': 15, 'Lifestyle': 14, 'Strip': 12, 'Power': 10, 'Outlet': 12 },
-    'Fitness': { 'Regional Mall': 12, 'Lifestyle': 11, 'Strip': 10, 'Power': 9, 'Outlet': 10 }
-  };
-  
-  return ocrMatrix[merchandiseType]?.[centerType] || 10;
-}
 
 function getCenterBenchmarks(centerType: string): {
   salesPSF: number;

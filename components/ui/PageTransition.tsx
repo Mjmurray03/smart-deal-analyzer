@@ -96,17 +96,16 @@ const PageTransition: React.FC<PageTransitionProps> = ({
         setIsVisible(false);
         
         // Trigger enter animation
-        const enterTimeout = setTimeout(() => {
+        setTimeout(() => {
           setIsVisible(true);
         }, 50);
-
-        return () => clearTimeout(enterTimeout);
       }, 300); // Match with animation duration
 
       return () => clearTimeout(exitTimeout);
     } else {
       setCurrentPath(pathname);
       setIsVisible(true);
+      return undefined;
     }
   }, [pathname, currentPath, reducedMotion]);
 
@@ -119,6 +118,7 @@ const PageTransition: React.FC<PageTransitionProps> = ({
       return () => clearTimeout(timer);
     } else {
       setIsVisible(true);
+      return undefined;
     }
   }, [delay, reducedMotion]);
 
@@ -192,6 +192,7 @@ export const usePageTransition = (options?: Partial<PageTransitionProps>) => {
       
       return () => clearTimeout(timer);
     }
+    return undefined;
   }, [pathname, reducedMotion, options?.duration]);
 
   return { isTransitioning, pathname };

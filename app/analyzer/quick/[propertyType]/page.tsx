@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
+import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useParams } from 'next/navigation';
 import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
 import Link from 'next/link';
 import { Breadcrumbs } from '@/components/navigation/Breadcrumbs';
@@ -11,6 +11,7 @@ import EnhancedDynamicInputForm from '@/components/calculator/EnhancedDynamicInp
 import { InlineLoader, ContentTransition } from '@/components/ui/LoadingStates';
 import { FormSectionSkeleton } from '@/components/ui/Skeleton';
 import { useLoadingState } from '@/lib/hooks/useLoadingState';
+import { useNavigationGuard } from '@/lib/hooks/useNavigationGuard';
 
 interface FieldObject {
   field: string;
@@ -19,7 +20,14 @@ interface FieldObject {
 
 export default function QuickAnalysisPropertyPage() {
   const params = useParams();
-  const router = useRouter();
+  const { navigate } = useNavigationGuard({
+    debounceMs: 300,
+    maxRetries: 3,
+    onNavigationError: (error) => {
+      console.error('Navigation failed:', error);
+    }
+  });
+  
   const propertyType = params.propertyType as string;
   const [selectedPackage, setSelectedPackage] = useState<string | null>(null);
   const [metricFlags, setMetricFlags] = useState<MetricFlags>({} as MetricFlags);
@@ -29,13 +37,17 @@ export default function QuickAnalysisPropertyPage() {
     propertyType: propertyType as PropertyType
   });
 
-  const packages = quickPackages[propertyType] || [];
-  const capitalizedType = propertyType.charAt(0).toUpperCase() + propertyType.slice(1).replace('-', ' ');
+  // Memoize packages to prevent unnecessary re-calculations
+  const packages = useMemo(() => quickPackages[propertyType] || [], [propertyType]);
+  const capitalizedType = useMemo(() => 
+    propertyType.charAt(0).toUpperCase() + propertyType.slice(1).replace('-', ' '), 
+    [propertyType]
+  );
 
-  const handlePackageSelect = (packageId: string) => {
+  // Memoized package selection handler to prevent unnecessary re-renders
+  const handlePackageSelect = useCallback((packageId: string) => {
     const selectedPkg = packages.find(p => p.id === packageId);
     if (selectedPkg) {
-      
       // Auto-select package metrics
       const packageFlags: MetricFlags = {} as MetricFlags;
       selectedPkg.includedMetrics.forEach(metric => {
@@ -45,13 +57,15 @@ export default function QuickAnalysisPropertyPage() {
     }
     setSelectedPackage(packageId);
     setPropertyData(prev => ({ ...prev, propertyType: propertyType as PropertyType }));
-  };
+  }, [packages, propertyType]);
 
-  const handleDataChange = (data: Partial<PropertyData>) => {
+  // Memoized data change handler to prevent unnecessary re-renders
+  const handleDataChange = useCallback((data: Partial<PropertyData>) => {
     setPropertyData(prev => ({ ...prev, ...data }));
-  };
+  }, []);
 
-  const handleCalculate = async () => {
+  // Memoized calculation handler to prevent unnecessary re-renders
+  const handleCalculate = useCallback(async () => {
     const selectedPkg = packages.find(pkg => pkg.id === selectedPackage);
     if (!selectedPkg) return;
 
@@ -90,12 +104,25 @@ export default function QuickAnalysisPropertyPage() {
       // Simulate processing time
       await new Promise(resolve => setTimeout(resolve, 1000));
       
-      // Navigate to results page with data
+      // Use navigation guard to prevent infinite loops
       const dataParam = encodeURIComponent(JSON.stringify(enhancedPropertyData));
       const flagsParam = encodeURIComponent(JSON.stringify(metricFlags));
-      router.push(`/analyzer/${propertyType}/results?data=${dataParam}&flags=${flagsParam}`);
+      navigate(`/analyzer/${propertyType}/results?data=${dataParam}&flags=${flagsParam}`);
     });
-  };
+  }, [packages, selectedPackage, execute, propertyData, metricFlags, navigate, propertyType]);
+
+  // Effect to update property data when property type changes
+  useEffect(() => {
+    setPropertyData(prev => ({ ...prev, propertyType: propertyType as PropertyType }));
+  }, [propertyType]);
+
+  // Effect to reset state when packages change
+  useEffect(() => {
+    if (packages.length === 0) {
+      setSelectedPackage(null);
+      setMetricFlags({} as MetricFlags);
+    }
+  }, [packages]);
 
   if (!selectedPackage) {
     return (

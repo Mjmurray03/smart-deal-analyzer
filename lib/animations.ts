@@ -107,7 +107,7 @@ export const staggerChildren = (delay: number = 50) => ({
 export function useScrollAnimation(threshold = 0.1, rootMargin = '0px 0px -50px 0px') {
   const [ref, setRef] = useState<HTMLElement | null>(null);
   const [isVisible, setIsVisible] = useState(false);
-  const observerRef = useRef<IntersectionObserver>();
+  const observerRef = useRef<IntersectionObserver | null>(null);
   
   useEffect(() => {
     if (!ref) return;

@@ -33,8 +33,8 @@ const AnimatedNumber: React.FC<AnimatedNumberProps> = ({
 }) => {
   const [displayValue, setDisplayValue] = useState(0);
   const [isAnimating, setIsAnimating] = useState(false);
-  const frameRef = useRef<number>();
-  const startTimeRef = useRef<number>();
+  const frameRef = useRef<number | undefined>(undefined);
+  const startTimeRef = useRef<number | undefined>(undefined);
   const startValueRef = useRef<number>(0);
   const hasAnimatedRef = useRef(false);
   
@@ -190,13 +190,19 @@ export const AnimatedCompactNumber: React.FC<Omit<AnimatedNumberProps, 'formatAs
 // Hook for programmatic animation control
 export const useAnimatedNumber = (initialValue: number = 0) => {
   const [value, setValue] = useState(initialValue);
+  const [isAnimating, setIsAnimating] = useState(false);
   
   const animateTo = (targetValue: number) => {
+    setIsAnimating(true);
     setValue(targetValue);
+    // Animation complete callback would be handled by the consuming component
+    setTimeout(() => setIsAnimating(false), 300); // Default animation duration
   };
 
   const reset = () => {
+    setIsAnimating(true);
     setValue(initialValue);
+    setTimeout(() => setIsAnimating(false), 300);
   };
 
   return {

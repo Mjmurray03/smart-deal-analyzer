@@ -793,7 +793,7 @@ export function analyzeMarketPosition(
   ];
   
   const amenityGapAnalysis = amenityChecklist.map(amenity => {
-    const hasAmenity = Boolean((property.amenities as Record<string, unknown>)?.[amenity.key]);
+    const hasAmenity = Boolean((property.amenities as unknown as Record<string, unknown>)?.[amenity.key]);
     const marketAdoption = marketComps.filter(c => {
       // Simplified - would need actual amenity data for comps
       return c.amenityScore > 70; // Assume high-scoring comps have it
@@ -1001,7 +1001,7 @@ export function analyzeValueAddPotential(
   
   // Phased approach (using Premium scenario)
   const premiumScenario = renovationROI.find(r => r.scenario === 'Premium');
-  if (!premiumScenario) return { error: 'Premium scenario not found' };
+  if (!premiumScenario) throw new Error('Premium scenario not found');
   const unitsPerPhase = Math.ceil(unRenovatedUnits.length / 3);
   
   const phasedApproach = [1, 2, 3].map(phase => {
@@ -1143,7 +1143,7 @@ function calculateAmenityScore(amenities: PropertyAmenities): number {
   };
   
   Object.entries(weights).forEach(([amenity, weight]) => {
-    if ((amenities as Record<string, unknown>)?.[amenity]) {
+    if ((amenities as unknown as Record<string, unknown>)?.[amenity]) {
       score += weight;
     }
   });

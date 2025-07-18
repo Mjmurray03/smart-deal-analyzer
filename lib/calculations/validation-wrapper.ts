@@ -1,4 +1,4 @@
-import { PropertyData, MetricFlags, CalculatedMetrics, CalculationPackage } from './types';
+import { PropertyData, MetricFlags, CalculatedMetrics } from './types';
 import { validatePropertyData, validateMetricCalculation, isValidNumber } from './validation';
 import { calculateMetrics } from './metrics';
 import { quickPackages, advancedPackages } from './packages';

@@ -131,7 +131,7 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
   useEffect(() => {
     if (disabled || reducedMotion) {
       setIsRevealed(true);
-      return;
+      return undefined;
     }
 
     if (isVisible && (!triggerOnce || !hasAnimated)) {
@@ -146,6 +146,8 @@ const ScrollReveal: React.FC<ScrollRevealProps> = ({
       setIsRevealed(false);
       onHide?.();
     }
+    
+    return undefined;
   }, [isVisible, hasAnimated, triggerOnce, delay, disabled, reducedMotion, onReveal, onHide]);
 
   // Combined classes
@@ -213,7 +215,7 @@ export const StaggeredScrollReveal: React.FC<StaggeredScrollRevealProps> = ({
           duration={duration}
           delay={baseDelay + (index * staggerDelay)}
           threshold={threshold}
-          className={itemClassName}
+          {...(itemClassName && { className: itemClassName })}
         >
           {child}
         </ScrollReveal>
@@ -234,7 +236,7 @@ export const useScrollReveal = (options?: Partial<ScrollRevealProps>) => {
   useEffect(() => {
     if (reducedMotion || options?.disabled) {
       setIsRevealed(true);
-      return;
+      return undefined;
     }
 
     if (isVisible && (options?.triggerOnce !== false ? !isRevealed : true)) {
@@ -248,6 +250,8 @@ export const useScrollReveal = (options?: Partial<ScrollRevealProps>) => {
       setIsRevealed(false);
       options?.onHide?.();
     }
+    
+    return undefined;
   }, [isVisible, isRevealed, options, reducedMotion]);
 
   return { ref, isRevealed, isVisible };
@@ -333,7 +337,7 @@ export const CardGridReveal: React.FC<CardGridRevealProps> = ({
           animation="fadeInUp"
           delay={index * staggerDelay}
           threshold={0.1}
-          className={itemClassName}
+          {...(itemClassName && { className: itemClassName })}
         >
           {child}
         </ScrollReveal>
@@ -367,7 +371,7 @@ export const ProgressiveReveal: React.FC<ProgressiveRevealProps> = ({
           animation={section.animation || 'fadeInUp'}
           delay={section.delay || index * 200}
           threshold={0.2}
-          className={sectionClassName}
+          {...(sectionClassName && { className: sectionClassName })}
         >
           {section.content}
         </ScrollReveal>

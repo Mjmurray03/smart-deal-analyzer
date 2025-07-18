@@ -181,10 +181,22 @@ export default function EnhancedDynamicInputForm({
 
   // Initialize expanded sections (first section open by default)
   useEffect(() => {
-    if (fieldGroups.length > 0 && fieldGroups[0]) {
-      setExpandedSections({ [fieldGroups[0].id]: true });
-    }
-  }, [fieldGroups]);
+    // Only set expanded sections once on initial render or when fieldGroups changes structure
+    // Use JSON.stringify to compare structure rather than reference
+    const fieldGroupsKey = JSON.stringify(fieldGroups.map(group => group.id));
+    
+    setExpandedSections(prevState => {
+      // If we already have expanded sections and the structure hasn't changed, keep current state
+      if (Object.keys(prevState).length > 0) {
+        return prevState;
+      }
+      
+      // Otherwise initialize with first section expanded
+      return fieldGroups.length > 0 && fieldGroups[0] 
+        ? { [fieldGroups[0].id]: true }
+        : {};
+    });
+  }, [fieldGroups.length]); // Only depend on the length, not the entire fieldGroups object
 
   // Auto-save functionality
   useEffect(() => {
@@ -540,10 +552,10 @@ export default function EnhancedDynamicInputForm({
                            (packageType?.split('-')[0]?.slice(1) || '') || 'Property';
 
   return (
-    <form className="max-w-4xl mx-auto">
-      {/* Progress indicator */}
-      <div className="mb-8">
-        <div className="flex items-center justify-between mb-2">
+    <form className="max-w-4xl mx-auto pb-40">
+      {/* Progress indicator - fixed position to avoid overlap */}
+      <div className="mb-8 bg-white border border-gray-200 rounded-lg p-4 shadow-sm sticky top-0 z-30">
+        <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-gray-700">
             Form Completion
           </span>
@@ -559,13 +571,13 @@ export default function EnhancedDynamicInputForm({
         </div>
       </div>
       
-      {/* Auto-save indicator */}
-      <div className="flex items-center justify-between mb-6">
+      {/* Header and auto-save indicator */}
+      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-8 gap-4">
         <h2 className="text-2xl font-bold text-gray-900">
           {propertyTypeTitle} Analysis Details
         </h2>
         {autoSaveStatus && (
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 px-3 py-1 rounded-full">
             {autoSaveStatus === 'saving' && (
               <>
                 <div className="w-2 h-2 bg-amber-500 rounded-full animate-pulse" />
@@ -589,9 +601,9 @@ export default function EnhancedDynamicInputForm({
         const isExpanded = expandedSections[group.id];
 
         return (
-          <Card key={group.id} variant="bordered" className="mb-6">
+          <Card key={group.id} variant="bordered" className="mb-6 transition-all duration-200 ease-in-out">
             <CardHeader 
-              className="cursor-pointer select-none"
+              className="cursor-pointer select-none hover:bg-gray-50 transition-colors"
               onClick={() => toggleSection(group.id)}
             >
               <div className="flex items-center justify-between">
@@ -625,54 +637,67 @@ export default function EnhancedDynamicInputForm({
               </div>
             </CardHeader>
             
-            {isExpanded && (
-              <CardBody className="pt-0">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {group.fields.map((fieldName) => renderField(fieldName))}
-                </div>
-              </CardBody>
-            )}
+            <div className={cn(
+              "transition-all duration-300 ease-in-out overflow-hidden",
+              isExpanded ? "max-h-none opacity-100" : "max-h-0 opacity-0"
+            )}>
+              {isExpanded && (
+                <CardBody className="pt-0 animate-in slide-in-from-top-2 duration-300">
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8">
+                    {group.fields.map((fieldName) => (
+                      <div key={fieldName} className="min-h-[80px]">
+                        {renderField(fieldName)}
+                      </div>
+                    ))}
+                  </div>
+                </CardBody>
+              )}
+            </div>
           </Card>
         );
       })}
 
       {/* Form navigation */}
-      <div className="sticky bottom-0 bg-white border-t border-gray-200 mt-12 -mx-6 px-6 py-4">
-        <div className="max-w-4xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <Button
-              type="button"
-              variant="ghost"
-              leftIcon={ArrowLeft}
-              onClick={() => window.history.back()}
-            >
-              Back
-            </Button>
+      <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">
+        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <Button
+                type="button"
+                variant="ghost"
+                leftIcon={ArrowLeft}
+                onClick={() => window.history.back()}
+                className="shrink-0"
+              >
+                Back
+              </Button>
+              
+              <Button
+                type="button"
+                variant="ghost"
+                leftIcon={Save}
+                onClick={() => {
+                  setAutoSaveStatus('saving');
+                  const draftKey = `smartdeal-draft-${packageType || 'default'}`;
+                  localStorage.setItem(draftKey, JSON.stringify(data));
+                  setTimeout(() => setAutoSaveStatus('saved'), 300);
+                }}
+                className="shrink-0"
+              >
+                Save Draft
+              </Button>
+            </div>
             
-            <Button
-              type="button"
-              variant="ghost"
-              leftIcon={Save}
-              onClick={() => {
-                setAutoSaveStatus('saving');
-                const draftKey = `smartdeal-draft-${packageType || 'default'}`;
-                localStorage.setItem(draftKey, JSON.stringify(data));
-                setTimeout(() => setAutoSaveStatus('saved'), 300);
-              }}
-            >
-              Save Draft
-            </Button>
-          </div>
-          
-          <div className="flex items-center gap-4">
-            {Object.keys(errors).length > 0 && (
-              <span className="text-sm text-red-600">
-                {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
-              </span>
-            )}
-            
-            <div className="text-sm text-gray-500">
-              Progress: {Math.round((completedFields / totalFields) * 100)}%
+            <div className="flex flex-col sm:flex-row items-center gap-4">
+              {Object.keys(errors).length > 0 && (
+                <span className="text-sm text-red-600 text-center">
+                  {Object.keys(errors).length} field{Object.keys(errors).length > 1 ? 's' : ''} need attention
+                </span>
+              )}
+              
+              <div className="text-sm text-gray-500">
+                Progress: {Math.round((completedFields / totalFields) * 100)}%
+              </div>
             </div>
           </div>
         </div>
