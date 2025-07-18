@@ -20,7 +20,7 @@ import {
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import Input from '@/components/ui/Input';
+import InputWithType from '@/components/ui/InputWithType';
 import { cn } from '@/lib/design-system/utils';
 import { PropertyData } from '@/lib/calculations/types';
 import { FieldDefinition } from '@/lib/calculations/packages/enhanced-package-types';
@@ -294,9 +294,9 @@ export default function EnhancedDynamicInputForm({
     return null;
   }, [allFields]);
 
-  // Handle field changes with proper type conversion
+  // Handle field changes with proper type conversion and safety
   const handleFieldChange = useCallback((fieldName: string, value: FieldValue) => {
-    // Convert value to appropriate type
+    // Safely handle value conversion
     let processedValue = value;
     
     // Check if this field should be a number
@@ -309,9 +309,11 @@ export default function EnhancedDynamicInputForm({
       fieldName.includes('Price') || fieldName.includes('Amount') || fieldName.includes('Rate') ||
       fieldName.includes('NOI') || fieldName.includes('Expenses') || fieldName.includes('Income');
     
+    // Safe numeric conversion
     if (isNumericField && value !== '' && value !== null && value !== undefined) {
       const stringValue = String(value);
-      processedValue = parseFloat(stringValue) || 0;
+      const numericValue = parseFloat(stringValue.replace(/[^0-9.-]/g, ''));
+      processedValue = isNaN(numericValue) ? 0 : numericValue;
     }
     
     // Validate field
@@ -334,6 +336,54 @@ export default function EnhancedDynamicInputForm({
 
     setHasChanges(true);
   }, [data, onChange, validateField, allFields]);
+
+  // Safe onChange handler for Input components
+  const createSafeOnChangeHandler = useCallback((fieldName: string) => {
+    return (valueOrEvent: string | number | React.ChangeEvent<HTMLInputElement>) => {
+      let value: FieldValue;
+      
+      // Handle both direct values and event objects
+      if (valueOrEvent && typeof valueOrEvent === 'object' && 'target' in valueOrEvent) {
+        // Event object - safely extract value
+        value = valueOrEvent.target?.value ?? '';
+      } else {
+        // Direct value
+        value = valueOrEvent;
+      }
+      
+      handleFieldChange(fieldName, value);
+    };
+  }, [handleFieldChange]);
+
+  // Get appropriate input type based on field definition
+  const getInputType = useCallback((fieldDef: FieldDefinition | keyof PropertyData): 'currency' | 'percentage' | 'number' | 'text' | 'address' => {
+    if (typeof fieldDef === 'object') {
+      switch (fieldDef.type) {
+        case 'currency': return 'currency';
+        case 'percentage': return 'percentage';
+        case 'number': return 'number';
+        default: return 'text';
+      }
+    }
+    
+    const fieldName = String(fieldDef);
+    if (fieldName.includes('Price') || fieldName.includes('Amount') || fieldName.includes('NOI') || 
+        fieldName.includes('Income') || fieldName.includes('Expenses') || fieldName.includes('Fees') ||
+        fieldName.includes('Loan') && fieldName.includes('Amount')) {
+      return 'currency';
+    }
+    if (fieldName.includes('Rate') || fieldName.includes('rate') || fieldName.includes('Percentage')) {
+      return 'percentage';
+    }
+    if (fieldName.includes('Address') || fieldName.includes('address')) {
+      return 'address';
+    }
+    if (fieldName.includes('SF') || fieldName.includes('SquareFootage') || fieldName.includes('Units') ||
+        fieldName.includes('Term') || fieldName.includes('Year')) {
+      return 'number';
+    }
+    return 'text';
+  }, []);
 
   // Array field operations
   const handleArrayFieldChange = useCallback((fieldName: string, index: number, subField: string, value: unknown) => {
@@ -445,6 +495,7 @@ export default function EnhancedDynamicInputForm({
     const value = getFieldValue(field);
     const error = errors[field];
     const suggestion = getFieldSuggestion(field, data, packageType);
+    const inputType = getInputType(fieldDef);
 
     if (type === 'array') {
       return renderArrayField(fieldDef);
@@ -452,19 +503,18 @@ export default function EnhancedDynamicInputForm({
 
     return (
       <div key={field} className="group">
-        <Input
+        <InputWithType
           label={label || field}
-          type={type === 'number' || type === 'currency' || type === 'percentage' ? 'number' : 'text'}
+          inputType={inputType}
           value={String(value || '')}
-          onChange={(e) => handleFieldChange(field, e.target.value)}
+          onValueChange={createSafeOnChangeHandler(field)}
           {...(error ? { error } : {})}
           {...(helperText || description ? { helper: helperText || description } : {})}
           required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
-          {...(type === 'currency' ? { formatAs: 'currency' as const } : 
-               type === 'percentage' ? { formatAs: 'percentage' as const } : {})}
           {...(placeholder ? { placeholder } : {})}
           success={Boolean(value) && !error}
           floating
+          showTypeIndicator={true}
           {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
         />
         
@@ -473,10 +523,10 @@ export default function EnhancedDynamicInputForm({
           <button
             type="button"
             onClick={() => handleFieldChange(field, suggestion)}
-            className="mt-2 text-sm text-primary-600 hover:text-primary-700 transition-colors"
+            className="mt-2 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1"
           >
-            💡 Suggested: {type === 'currency' ? `$${suggestion.toLocaleString()}` : 
-                          type === 'percentage' ? `${suggestion}%` : suggestion}
+            💡 Suggested: {inputType === 'currency' ? `$${suggestion.toLocaleString()}` : 
+                          inputType === 'percentage' ? `${suggestion}%` : suggestion}
           </button>
         )}
       </div>
@@ -488,18 +538,20 @@ export default function EnhancedDynamicInputForm({
     const error = errors[field];
     const suggestion = getFieldSuggestion(field, data, packageType);
     const label = String(field).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
+    const inputType = getInputType(field);
 
     return (
       <div key={field} className="group">
-        <Input
+        <InputWithType
           label={label}
-          type="number"
+          inputType={inputType}
           value={String(value || '')}
-          onChange={(e) => handleFieldChange(field, e.target.value)}
+          onValueChange={createSafeOnChangeHandler(field)}
           {...(error ? { error } : {})}
           required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
           success={Boolean(value) && !error}
           floating
+          showTypeIndicator={true}
           {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
         />
         
@@ -507,9 +559,10 @@ export default function EnhancedDynamicInputForm({
           <button
             type="button"
             onClick={() => handleFieldChange(field, suggestion)}
-            className="mt-2 text-sm text-primary-600 hover:text-primary-700 transition-colors"
+            className="mt-2 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1"
           >
-            💡 Suggested: ${suggestion.toLocaleString()}
+            💡 Suggested: {inputType === 'currency' ? `$${suggestion.toLocaleString()}` : 
+                          inputType === 'percentage' ? `${suggestion}%` : suggestion}
           </button>
         )}
       </div>
@@ -571,18 +624,20 @@ export default function EnhancedDynamicInputForm({
                     </div>
                     
                     <div className="grid md:grid-cols-2 gap-4">
-                      {subFields.map((subField) => (
-                        <Input
-                          key={subField.field}
-                          label={subField.label || subField.field}
-                          type={subField.type === 'number' ? 'number' : 'text'}
-                          value={String(item[subField.field] || '')}
-                          onChange={(val) => handleArrayFieldChange(field, index, subField.field, val)}
-                          {...(subField.type === 'currency' ? { formatAs: 'currency' as const } : 
-                              subField.type === 'percentage' ? { formatAs: 'percentage' as const } : {})}
-                          floating
-                        />
-                      ))}
+                      {subFields.map((subField) => {
+                        const subInputType = getInputType(subField);
+                        return (
+                          <InputWithType
+                            key={subField.field}
+                            label={subField.label || subField.field}
+                            inputType={subInputType}
+                            value={String(item[subField.field] || '')}
+                            onValueChange={(val) => handleArrayFieldChange(field, index, subField.field, val)}
+                            floating
+                            showTypeIndicator={true}
+                          />
+                        );
+                      })}
                     </div>
                   </CardBody>
                 </Card>

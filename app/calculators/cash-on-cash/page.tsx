@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon, CalculatorIcon } from '@heroicons/react/24/outline';
 import { formatMetricValue } from '@/lib/calculations/metrics';
 import { Card, CardBody } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
+import InputWithType from '@/components/ui/InputWithType';
 import { Button } from '@/components/ui/Button';
 
 export default function CashOnCashCalculatorPage() {
@@ -77,54 +77,32 @@ export default function CashOnCashCalculatorPage() {
           <CardBody>
             <div className="space-y-6">
               {/* Annual Cash Flow Input */}
-              <div>
-                <label htmlFor="annualCashFlow" className="block text-sm font-medium text-gray-700 mb-2">
-                  Annual Pre-Tax Cash Flow
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <Input
-                    id="annualCashFlow"
-                    type="number"
-                    value={annualCashFlow}
-                    onChange={(value) => setAnnualCashFlow(String(value))}
-                    placeholder="Enter annual cash flow"
-                    className="pl-8"
-                    {...(errors.annualCashFlow && { error: errors.annualCashFlow })}
-                  />
-                </div>
-                {errors.annualCashFlow && (
-                  <p className="mt-1 text-sm text-red-600">{errors.annualCashFlow}</p>
-                )}
-                <p className="mt-1 text-xs text-gray-500">
-                  NOI minus debt service
-                </p>
-              </div>
+              <InputWithType
+                id="annualCashFlow"
+                inputType="currency"
+                label="Annual Pre-Tax Cash Flow"
+                value={annualCashFlow}
+                onValueChange={(value) => setAnnualCashFlow(String(value))}
+                placeholder="Enter annual cash flow"
+                helper="NOI minus debt service"
+                {...(errors.annualCashFlow && { error: errors.annualCashFlow })}
+                showTypeIndicator={true}
+                floating
+              />
 
               {/* Cash Invested Input */}
-              <div>
-                <label htmlFor="cashInvested" className="block text-sm font-medium text-gray-700 mb-2">
-                  Total Cash Invested
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <Input
-                    id="cashInvested"
-                    type="number"
-                    value={cashInvested}
-                    onChange={(value) => setCashInvested(String(value))}
-                    placeholder="Enter total cash invested"
-                    className="pl-8"
-                    {...(errors.cashInvested && { error: errors.cashInvested })}
-                  />
-                </div>
-                {errors.cashInvested && (
-                  <p className="mt-1 text-sm text-red-600">{errors.cashInvested}</p>
-                )}
-                <p className="mt-1 text-xs text-gray-500">
-                  Down payment + closing costs + initial repairs
-                </p>
-              </div>
+              <InputWithType
+                id="cashInvested"
+                inputType="currency"
+                label="Total Cash Invested"
+                value={cashInvested}
+                onValueChange={(value) => setCashInvested(String(value))}
+                placeholder="Enter total cash invested"
+                helper="Down payment + closing costs + initial repairs"
+                {...(errors.cashInvested && { error: errors.cashInvested })}
+                showTypeIndicator={true}
+                floating
+              />
 
               {/* Buttons */}
               <div className="flex gap-4">
@@ -162,7 +140,7 @@ export default function CashOnCashCalculatorPage() {
               <h4 className="text-sm font-semibold text-gray-700 mb-2">What is Cash-on-Cash Return?</h4>
               <p className="text-sm text-gray-600">
                 Cash-on-cash return measures the annual pre-tax cash flow earned on the actual cash invested. 
-                It\'s a quick way to evaluate the cash income on a property relative to the cash invested.
+                It&apos;s a quick way to evaluate the cash income on a property relative to the cash invested.
               </p>
               <p className="text-sm text-gray-600 mt-2">
                 <strong>Formula:</strong> Cash-on-Cash = (Annual Cash Flow / Total Cash Invested) × 100

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon, CalculatorIcon } from '@heroicons/react/24/outline';
 import { formatMetricValue } from '@/lib/calculations/metrics';
 import { Card, CardBody } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
+import InputWithType from '@/components/ui/InputWithType';
 import { Button } from '@/components/ui/Button';
 
 export default function PricePSFCalculatorPage() {
@@ -77,44 +77,32 @@ export default function PricePSFCalculatorPage() {
           <CardBody>
             <div className="space-y-6">
               {/* Price Input */}
-              <div>
-                <label htmlFor="price" className="block text-sm font-medium text-gray-700 mb-2">
-                  Total Price
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <Input
-                    id="price"
-                    type="number"
-                    value={price}
-                    onChange={(value) => setPrice(String(value))}
-                    placeholder="Enter total price"
-                    className="pl-8"
-                    {...(errors.price && { error: errors.price })}
-                  />
-                </div>
-                {errors.price && (
-                  <p className="mt-1 text-sm text-red-600">{errors.price}</p>
-                )}
-              </div>
+              <InputWithType
+                id="price"
+                inputType="currency"
+                label="Total Price"
+                value={price}
+                onValueChange={(value) => setPrice(String(value))}
+                placeholder="Enter total price"
+                helper="Total purchase or sale price of the property"
+                {...(errors.price && { error: errors.price })}
+                showTypeIndicator={true}
+                floating
+              />
 
               {/* Square Feet Input */}
-              <div>
-                <label htmlFor="squareFeet" className="block text-sm font-medium text-gray-700 mb-2">
-                  Total Square Feet
-                </label>
-                <Input
-                  id="squareFeet"
-                  type="number"
-                  value={squareFeet}
-                  onChange={(value) => setSquareFeet(String(value))}
-                  placeholder="Enter total square feet"
-                  {...(errors.squareFeet && { error: errors.squareFeet })}
-                />
-                {errors.squareFeet && (
-                  <p className="mt-1 text-sm text-red-600">{errors.squareFeet}</p>
-                )}
-              </div>
+              <InputWithType
+                id="squareFeet"
+                inputType="number"
+                label="Total Square Feet"
+                value={squareFeet}
+                onValueChange={(value) => setSquareFeet(String(value))}
+                placeholder="Enter total square feet"
+                helper="Total square footage of the property"
+                {...(errors.squareFeet && { error: errors.squareFeet })}
+                showTypeIndicator={true}
+                floating
+              />
 
               {/* Buttons */}
               <div className="flex gap-4">
@@ -166,7 +154,7 @@ export default function PricePSFCalculatorPage() {
               <h4 className="text-sm font-semibold text-gray-700 mb-2">What is Price per Square Foot?</h4>
               <p className="text-sm text-gray-600">
                 Price per square foot (PSF) is a common metric used to compare property values. 
-                It\'s calculated by dividing the total price by the total square footage of the property.
+                It&apos;s calculated by dividing the total price by the total square footage of the property.
               </p>
               <p className="text-sm text-gray-600 mt-2">
                 <strong>Formula:</strong> Price PSF = Total Price / Total Square Feet

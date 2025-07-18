@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { ArrowLeftIcon, CalculatorIcon } from '@heroicons/react/24/outline';
 import { formatMetricValue } from '@/lib/calculations/metrics';
 import { Card, CardBody } from '@/components/ui/Card';
-import { Input } from '@/components/ui/Input';
+import InputWithType from '@/components/ui/InputWithType';
 import { Button } from '@/components/ui/Button';
 
 export default function CapRateCalculatorPage() {
@@ -77,48 +77,32 @@ export default function CapRateCalculatorPage() {
           <CardBody>
             <div className="space-y-6">
               {/* NOI Input */}
-              <div>
-                <label htmlFor="noi" className="block text-sm font-medium text-gray-700 mb-2">
-                  Net Operating Income (NOI)
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <Input
-                    id="noi"
-                    type="number"
-                    value={noi}
-                    onChange={(value) => setNoi(String(value))}
-                    placeholder="Enter annual NOI"
-                    className="pl-8"
-                    {...(errors.noi && { error: errors.noi })}
-                  />
-                </div>
-                {errors.noi && (
-                  <p className="mt-1 text-sm text-red-600">{errors.noi}</p>
-                )}
-              </div>
+              <InputWithType
+                id="noi"
+                inputType="currency"
+                label="Net Operating Income (NOI)"
+                value={noi}
+                onValueChange={(value) => setNoi(String(value))}
+                placeholder="Enter annual NOI"
+                helper="Enter the annual net operating income for the property"
+                {...(errors.noi && { error: errors.noi })}
+                showTypeIndicator={true}
+                floating
+              />
 
               {/* Purchase Price Input */}
-              <div>
-                <label htmlFor="purchasePrice" className="block text-sm font-medium text-gray-700 mb-2">
-                  Purchase Price
-                </label>
-                <div className="relative">
-                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-500">$</span>
-                  <Input
-                    id="purchasePrice"
-                    type="number"
-                    value={purchasePrice}
-                    onChange={(value) => setPurchasePrice(String(value))}
-                    placeholder="Enter purchase price"
-                    className="pl-8"
-                    {...(errors.purchasePrice && { error: errors.purchasePrice })}
-                  />
-                </div>
-                {errors.purchasePrice && (
-                  <p className="mt-1 text-sm text-red-600">{errors.purchasePrice}</p>
-                )}
-              </div>
+              <InputWithType
+                id="purchasePrice"
+                inputType="currency"
+                label="Purchase Price"
+                value={purchasePrice}
+                onValueChange={(value) => setPurchasePrice(String(value))}
+                placeholder="Enter purchase price"
+                helper="Enter the total purchase price of the property"
+                {...(errors.purchasePrice && { error: errors.purchasePrice })}
+                showTypeIndicator={true}
+                floating
+              />
 
               {/* Buttons */}
               <div className="flex gap-4">
