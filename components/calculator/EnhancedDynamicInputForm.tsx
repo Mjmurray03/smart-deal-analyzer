@@ -20,7 +20,7 @@ import {
 import { Card, CardHeader, CardBody } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { Badge } from '@/components/ui/Badge';
-import InputWithType from '@/components/ui/InputWithType';
+import EnhancedInput from '@/components/ui/EnhancedInput';
 import { cn } from '@/lib/design-system/utils';
 import { PropertyData } from '@/lib/calculations/types';
 import { FieldDefinition } from '@/lib/calculations/packages/enhanced-package-types';
@@ -355,35 +355,6 @@ export default function EnhancedDynamicInputForm({
     };
   }, [handleFieldChange]);
 
-  // Get appropriate input type based on field definition
-  const getInputType = useCallback((fieldDef: FieldDefinition | keyof PropertyData): 'currency' | 'percentage' | 'number' | 'text' | 'address' => {
-    if (typeof fieldDef === 'object') {
-      switch (fieldDef.type) {
-        case 'currency': return 'currency';
-        case 'percentage': return 'percentage';
-        case 'number': return 'number';
-        default: return 'text';
-      }
-    }
-    
-    const fieldName = String(fieldDef);
-    if (fieldName.includes('Price') || fieldName.includes('Amount') || fieldName.includes('NOI') || 
-        fieldName.includes('Income') || fieldName.includes('Expenses') || fieldName.includes('Fees') ||
-        fieldName.includes('Loan') && fieldName.includes('Amount')) {
-      return 'currency';
-    }
-    if (fieldName.includes('Rate') || fieldName.includes('rate') || fieldName.includes('Percentage')) {
-      return 'percentage';
-    }
-    if (fieldName.includes('Address') || fieldName.includes('address')) {
-      return 'address';
-    }
-    if (fieldName.includes('SF') || fieldName.includes('SquareFootage') || fieldName.includes('Units') ||
-        fieldName.includes('Term') || fieldName.includes('Year')) {
-      return 'number';
-    }
-    return 'text';
-  }, []);
 
   // Array field operations
   const handleArrayFieldChange = useCallback((fieldName: string, index: number, subField: string, value: unknown) => {
@@ -495,17 +466,15 @@ export default function EnhancedDynamicInputForm({
     const value = getFieldValue(field);
     const error = errors[field];
     const suggestion = getFieldSuggestion(field, data, packageType);
-    const inputType = getInputType(fieldDef);
 
     if (type === 'array') {
       return renderArrayField(fieldDef);
     }
 
     return (
-      <div key={field} className="group">
-        <InputWithType
-          label={label || field}
-          inputType={inputType}
+      <div key={field} className="group relative">
+        <EnhancedInput
+          headerText={label || field}
           value={String(value || '')}
           onValueChange={createSafeOnChangeHandler(field)}
           {...(error ? { error } : {})}
@@ -513,20 +482,19 @@ export default function EnhancedDynamicInputForm({
           required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
           {...(placeholder ? { placeholder } : {})}
           success={Boolean(value) && !error}
-          floating
+          autoDetectType={true}
           showTypeIndicator={true}
           {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
         />
         
-        {/* Smart suggestion */}
+        {/* Smart suggestion with improved positioning */}
         {suggestion && !value && (
           <button
             type="button"
             onClick={() => handleFieldChange(field, suggestion)}
-            className="mt-2 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1"
+            className="mt-3 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
           >
-            💡 Suggested: {inputType === 'currency' ? `$${suggestion.toLocaleString()}` : 
-                          inputType === 'percentage' ? `${suggestion}%` : suggestion}
+            💡 Suggested: {typeof suggestion === 'number' ? suggestion.toLocaleString() : suggestion}
           </button>
         )}
       </div>
@@ -538,19 +506,17 @@ export default function EnhancedDynamicInputForm({
     const error = errors[field];
     const suggestion = getFieldSuggestion(field, data, packageType);
     const label = String(field).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
-    const inputType = getInputType(field);
 
     return (
-      <div key={field} className="group">
-        <InputWithType
-          label={label}
-          inputType={inputType}
+      <div key={field} className="group relative">
+        <EnhancedInput
+          headerText={label}
           value={String(value || '')}
           onValueChange={createSafeOnChangeHandler(field)}
           {...(error ? { error } : {})}
           required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
           success={Boolean(value) && !error}
-          floating
+          autoDetectType={true}
           showTypeIndicator={true}
           {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
         />
@@ -559,10 +525,9 @@ export default function EnhancedDynamicInputForm({
           <button
             type="button"
             onClick={() => handleFieldChange(field, suggestion)}
-            className="mt-2 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1"
+            className="mt-3 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
           >
-            💡 Suggested: {inputType === 'currency' ? `$${suggestion.toLocaleString()}` : 
-                          inputType === 'percentage' ? `${suggestion}%` : suggestion}
+            💡 Suggested: {typeof suggestion === 'number' ? suggestion.toLocaleString() : suggestion}
           </button>
         )}
       </div>
@@ -625,15 +590,13 @@ export default function EnhancedDynamicInputForm({
                     
                     <div className="grid md:grid-cols-2 gap-4">
                       {subFields.map((subField) => {
-                        const subInputType = getInputType(subField);
                         return (
-                          <InputWithType
+                          <EnhancedInput
                             key={subField.field}
-                            label={subField.label || subField.field}
-                            inputType={subInputType}
+                            headerText={subField.label || subField.field}
                             value={String(item[subField.field] || '')}
                             onValueChange={(val) => handleArrayFieldChange(field, index, subField.field, val)}
-                            floating
+                            autoDetectType={true}
                             showTypeIndicator={true}
                           />
                         );
@@ -666,8 +629,8 @@ export default function EnhancedDynamicInputForm({
 
   return (
     <form className="max-w-4xl mx-auto pb-40">
-      {/* Progress indicator - fixed position to avoid overlap */}
-      <div className="mb-8 bg-white border border-gray-200 rounded-lg p-4 shadow-sm sticky top-0 z-30">
+      {/* Progress indicator - improved positioning */}
+      <div className="mb-8 bg-white border border-gray-200 rounded-lg p-4 shadow-sm sticky top-0 z-40 backdrop-blur-sm bg-white/95">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-gray-700">
             Form Completion
@@ -707,68 +670,75 @@ export default function EnhancedDynamicInputForm({
         )}
       </div>
 
-      {/* Grouped sections */}
-      {fieldGroups.map((group) => {
-        const Icon = group.icon;
-        const completion = getSectionCompletion(group.fields);
-        const isExpanded = expandedSections[group.id];
+      {/* Grouped sections with improved layout */}
+      <div className="space-y-6">
+        {fieldGroups.map((group) => {
+          const Icon = group.icon;
+          const completion = getSectionCompletion(group.fields);
+          const isExpanded = expandedSections[group.id];
 
-        return (
-          <Card key={group.id} variant="bordered" className="mb-6 transition-all duration-200 ease-in-out">
-            <CardHeader 
-              className="cursor-pointer select-none hover:bg-gray-50 transition-colors"
-              onClick={() => toggleSection(group.id)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={cn(
-                    "w-8 h-8 rounded-lg flex items-center justify-center",
-                    completion === 100
-                      ? "bg-green-100"
-                      : "bg-gray-100"
-                  )}>
-                    {completion === 100 ? (
-                      <Check className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <Icon className="w-4 h-4 text-gray-600" />
-                    )}
+          return (
+            <Card key={group.id} variant="bordered" className="transition-all duration-200 ease-in-out shadow-sm hover:shadow-md">
+              <CardHeader 
+                className="cursor-pointer select-none hover:bg-gray-50 transition-colors relative z-10"
+                onClick={() => toggleSection(group.id)}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div className={cn(
+                      "w-10 h-10 rounded-lg flex items-center justify-center",
+                      completion === 100
+                        ? "bg-green-100 border-2 border-green-200"
+                        : "bg-gray-100 border-2 border-gray-200"
+                    )}>
+                      {completion === 100 ? (
+                        <Check className="w-5 h-5 text-green-600" />
+                      ) : (
+                        <Icon className="w-5 h-5 text-gray-600" />
+                      )}
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-semibold text-gray-900">{group.name}</h3>
+                      {group.description && (
+                        <p className="text-sm text-gray-500">{group.description}</p>
+                      )}
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">{group.name}</h3>
-                    {group.description && (
-                      <p className="text-sm text-gray-500">{group.description}</p>
-                    )}
+                  <div className="flex items-center gap-3">
+                    <span className={cn(
+                      "text-sm font-medium px-2 py-1 rounded-full",
+                      completion === 100 ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"
+                    )}>
+                      {completion}%
+                    </span>
+                    <ChevronDown className={cn(
+                      "w-5 h-5 text-gray-400 transition-transform",
+                      isExpanded && "rotate-180"
+                    )} />
                   </div>
                 </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-sm text-gray-500">{completion}%</span>
-                  <ChevronDown className={cn(
-                    "w-5 h-5 text-gray-400 transition-transform",
-                    isExpanded && "rotate-180"
-                  )} />
-                </div>
+              </CardHeader>
+              
+              <div className={cn(
+                "transition-all duration-300 ease-in-out overflow-hidden",
+                isExpanded ? "max-h-none opacity-100" : "max-h-0 opacity-0"
+              )}>
+                {isExpanded && (
+                  <CardBody className="pt-0 pb-8 animate-in slide-in-from-top-2 duration-300">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 md:gap-12">
+                      {group.fields.map((fieldName) => (
+                        <div key={fieldName} className="min-h-[130px] relative space-y-2">
+                          {renderField(fieldName)}
+                        </div>
+                      ))}
+                    </div>
+                  </CardBody>
+                )}
               </div>
-            </CardHeader>
-            
-            <div className={cn(
-              "transition-all duration-300 ease-in-out overflow-hidden",
-              isExpanded ? "max-h-none opacity-100" : "max-h-0 opacity-0"
-            )}>
-              {isExpanded && (
-                <CardBody className="pt-0 animate-in slide-in-from-top-2 duration-300">
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-6 md:gap-8">
-                    {group.fields.map((fieldName) => (
-                      <div key={fieldName} className="min-h-[80px]">
-                        {renderField(fieldName)}
-                      </div>
-                    ))}
-                  </div>
-                </CardBody>
-              )}
-            </div>
-          </Card>
-        );
-      })}
+            </Card>
+          );
+        })}
+      </div>
 
       {/* Form navigation */}
       <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 shadow-lg z-50">

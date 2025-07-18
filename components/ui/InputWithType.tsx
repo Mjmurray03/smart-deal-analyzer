@@ -93,7 +93,7 @@ const InputWithType = React.forwardRef<HTMLInputElement, InputWithTypeProps>(({
   ) : label;
 
   // Handle value changes with proper typing
-  const handleChange = (value: any) => {
+  const handleChange = (value: string | number) => {
     // Call the original onChange if provided
     if (onChange) {
       // Create a synthetic event-like object for backward compatibility
@@ -111,58 +111,54 @@ const InputWithType = React.forwardRef<HTMLInputElement, InputWithTypeProps>(({
     }
   };
 
+  // Prepare base props
+  const baseInputProps = {
+    ref,
+    placeholder: config.placeholder,
+    helper: config.helper,
+    type: config.type,
+    onChange: handleChange,
+    className: cn(
+      // Add subtle border color based on input type for better visual distinction
+      inputType === 'currency' && "focus:border-green-500 focus:ring-green-500/10",
+      inputType === 'percentage' && "focus:border-blue-500 focus:ring-blue-500/10",
+      inputType === 'number' && "focus:border-purple-500 focus:ring-purple-500/10",
+      className
+    ),
+    ...('formatAs' in config ? { formatAs: config.formatAs } : {}),
+    ...('prefix' in config ? { prefix: config.prefix } : {}),
+    ...('suffix' in config ? { suffix: config.suffix } : {}),
+    ...(currencySymbol && inputType === 'currency' ? { currencySymbol } : {}),
+    ...props
+  };
+
   // Handle complex label rendering
   if (typeof enhancedLabel !== 'string' && enhancedLabel !== undefined) {
+    const conditionalProps: { leftIcon?: typeof IconComponent } = {};
+    if (showTypeIndicator) {
+      conditionalProps.leftIcon = IconComponent;
+    }
+
     return (
       <div className="w-full">
         <div className="mb-2">{enhancedLabel}</div>
-        <Input
-          ref={ref}
-          placeholder={config.placeholder}
-          helper={config.helper}
-          type={config.type}
-          leftIcon={showTypeIndicator ? IconComponent : undefined}
-          onChange={handleChange}
-          className={cn(
-            // Add subtle border color based on input type for better visual distinction
-            inputType === 'currency' && "focus:border-green-500 focus:ring-green-500/10",
-            inputType === 'percentage' && "focus:border-blue-500 focus:ring-blue-500/10",
-            inputType === 'number' && "focus:border-purple-500 focus:ring-purple-500/10",
-            className
-          )}
-          {...('formatAs' in config ? { formatAs: config.formatAs } : {})}
-          {...('prefix' in config ? { prefix: config.prefix } : {})}
-          {...('suffix' in config ? { suffix: config.suffix } : {})}
-          {...(currencySymbol && inputType === 'currency' ? { currencySymbol } : {})}
-          {...props}
-        />
+        <Input {...baseInputProps} {...conditionalProps} />
       </div>
     );
   }
 
-  return (
-    <Input
-      ref={ref}
-      label={enhancedLabel as string}
-      placeholder={config.placeholder}
-      helper={config.helper}
-      type={config.type}
-      leftIcon={showTypeIndicator ? IconComponent : undefined}
-      onChange={handleChange}
-      className={cn(
-        // Add subtle border color based on input type for better visual distinction
-        inputType === 'currency' && "focus:border-green-500 focus:ring-green-500/10",
-        inputType === 'percentage' && "focus:border-blue-500 focus:ring-blue-500/10",
-        inputType === 'number' && "focus:border-purple-500 focus:ring-purple-500/10",
-        className
-      )}
-      {...('formatAs' in config ? { formatAs: config.formatAs } : {})}
-      {...('prefix' in config ? { prefix: config.prefix } : {})}
-      {...('suffix' in config ? { suffix: config.suffix } : {})}
-      {...(currencySymbol && inputType === 'currency' ? { currencySymbol } : {})}
-      {...props}
-    />
-  );
+  // Handle string label
+  const conditionalProps: { label?: string; leftIcon?: typeof IconComponent } = {};
+  
+  if (typeof enhancedLabel === 'string') {
+    conditionalProps.label = enhancedLabel;
+  }
+  
+  if (showTypeIndicator) {
+    conditionalProps.leftIcon = IconComponent;
+  }
+
+  return <Input {...baseInputProps} {...conditionalProps} />;
 });
 
 InputWithType.displayName = 'InputWithType';

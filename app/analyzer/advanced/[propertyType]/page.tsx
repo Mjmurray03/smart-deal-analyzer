@@ -244,10 +244,15 @@ export default function AdvancedAnalysisPropertyPage() {
           </h1>
         </div>
 
-        <div className="max-w-3xl mx-auto">
+        <div className="max-w-5xl mx-auto">
           {/* Input Form */}
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4">Property Data</h2>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-8">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-semibold text-gray-900">Property Data Input</h2>
+              <div className="text-sm text-gray-500">
+                Advanced Analysis • {selectedPackageData.name}
+              </div>
+            </div>
             <EnhancedDynamicInputForm
               requiredFields={selectedPackageData.requiredFields}
               optionalFields={selectedPackageData.optionalFields as (keyof PropertyData)[] | undefined}
