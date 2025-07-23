@@ -343,7 +343,7 @@ export function TouchFriendlyButton({
   );
 }
 
-export default {
+const FormLayouts = {
   FormContainer,
   FormSection,
   FormGrid,
@@ -352,3 +352,5 @@ export default {
   ResponsiveFormLayout,
   TouchFriendlyButton
 };
+
+export default FormLayouts;

@@ -357,8 +357,7 @@ export interface MarketIntelligence {
 
 // Core analysis functions
 export function analyzeTenantFinancialHealth(
-  tenants: OfficeTenant[],
-  marketData: MarketIntelligence
+  tenants: OfficeTenant[]
 ): {
   portfolioCredit: {
     weightedCreditScore: number;
@@ -447,7 +446,7 @@ export function analyzeTenantFinancialHealth(
     industry,
     percentage: totalRent > 0 ? (rent / totalRent) * 100 : 0,
     tenantCount: tenants.filter(t => t.industry === industry).length,
-    marketOutlook: getIndustryOutlookFromMarket(industry, marketData)
+    marketOutlook: getIndustryOutlookFromMarket(industry)
   }));
 
   // Financial metrics per tenant
@@ -625,7 +624,7 @@ export function analyzeBuildingOperations(
   // Calculate operational efficiency scores
   const energyEfficiency = calculateEnergyEfficiency(building, propertyAge);
   const waterEfficiency = calculateWaterEfficiency(building);
-  const wasteEfficiency = calculateWasteEfficiency(building);
+  const wasteEfficiency = calculateWasteEfficiency();
   const indoorEnvironment = calculateIndoorEnvironment(building);
   
   const overallScore = (energyEfficiency + waterEfficiency + wasteEfficiency + indoorEnvironment) / 4;
@@ -873,7 +872,7 @@ function isInvestmentGrade(rating?: string): boolean {
   return ['AAA', 'AA', 'A', 'BBB'].includes(rating || '');
 }
 
-function getIndustryOutlookFromMarket(industry: string, _marketData: MarketIntelligence): 'Growing' | 'Stable' | 'Declining' {
+function getIndustryOutlookFromMarket(industry: string): 'Growing' | 'Stable' | 'Declining' {
   // Simplified industry outlook based on current market trends
   const growingIndustries = ['Technology', 'Healthcare', 'Professional Services', 'Financial Services'];
   const decliningIndustries = ['Traditional Retail', 'Print Media', 'Coal', 'Traditional Manufacturing'];
@@ -958,7 +957,7 @@ function calculateWaterEfficiency(building: BuildingOperations): number {
   return Math.min(100, Math.max(0, efficiency));
 }
 
-function calculateWasteEfficiency(_building: BuildingOperations): number {
+function calculateWasteEfficiency(): number {
   let efficiency = 65; // Base efficiency
   
   efficiency += 15; // Assume basic recycling program

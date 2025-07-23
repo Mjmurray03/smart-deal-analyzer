@@ -454,8 +454,7 @@ export function calculateMetrics(
         if (data.propertyType === 'office') {
           if (flags.tenantFinancialHealth && assetFunctions.analyzeTenantFinancialHealth) {
             assetAnalysisResults.tenantFinancialHealth = assetFunctions.analyzeTenantFinancialHealth(
-              (data.officeTenants?.tenants || []) as unknown as OfficeTenant[],
-              {} as MarketIntelligence
+              (data.officeTenants?.tenants || []) as unknown as OfficeTenant[]
             );
           }
           

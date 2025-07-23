@@ -44,10 +44,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   suffix,
   floating = false,
   formatAs,
-  // Note: currencySymbol and decimals kept for compatibility but not used
-  currencySymbol = '$',
+  // Note: currencySymbol and decimals kept for compatibility but unused
+  // currencySymbol = '$',
   allowNegative = false,
-  decimals = 2,
+  // decimals = 2,
   className,
   disabled,
   required,

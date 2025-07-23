@@ -11,11 +11,11 @@ export function isValidNumber(value: NumericValue): value is number {
   return value !== null && value !== undefined && !isNaN(value);
 }
 
-export function isValidDate(value: any): value is Date {
+export function isValidDate(value: unknown): value is Date {
   return value instanceof Date && !isNaN(value.getTime());
 }
 
-export function isValidString(value: any): value is string {
+export function isValidString(value: unknown): value is string {
   return typeof value === 'string' && value.length > 0;
 }
 
@@ -273,10 +273,10 @@ export function calculateBreakEven(
 }
 
 // Array processing helpers
-export function processArrayField<T>(
+export function processArrayField<T, R>(
   array: T[] | undefined,
-  processor: (item: T) => any
-): any[] {
+  processor: (item: T) => R
+): R[] {
   if (!array || !Array.isArray(array)) return [];
   return array.map(processor).filter(item => item !== null && item !== undefined);
 }

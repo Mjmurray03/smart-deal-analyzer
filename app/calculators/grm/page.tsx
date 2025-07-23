@@ -155,7 +155,7 @@ export default function GRMCalculatorPage() {
             <div className="mt-8 p-4 bg-gray-50 rounded-lg">
               <h4 className="text-sm font-semibold text-gray-700 mb-2">What is Gross Rent Multiplier?</h4>
               <p className="text-sm text-gray-600">
-                The Gross Rent Multiplier (GRM) is a simple metric that compares a property\'s price to its gross rental income. 
+                The Gross Rent Multiplier (GRM) is a simple metric that compares a property&apos;s price to its gross rental income. 
                 Lower GRM values generally indicate better investment opportunities.
               </p>
               <p className="text-sm text-gray-600 mt-2">

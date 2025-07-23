@@ -297,7 +297,7 @@ const renderComplexObject = (obj: unknown, depth: number = 0): React.ReactNode =
     }
 
     return <span className="text-gray-400">Unknown type</span>;
-  } catch (error) {
+  } catch {
     return <span className="text-red-400">Error rendering data</span>;
   }
 };
