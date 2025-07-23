@@ -269,23 +269,36 @@ export function getMetricValidationError(
  * @param flags - Object indicating which metrics to calculate
  * @returns Object containing calculated metrics and asset-specific analysis
  */
+// Asset analysis type definition
+interface AssetAnalysis {
+  [key: string]: unknown;
+}
+
 export function calculateMetrics(
   data: PropertyData,
   flags: MetricFlags
-): CalculatedMetrics & { assetAnalysis?: any; validationErrors?: Record<string, string> } {
-  const metrics: CalculatedMetrics & { assetAnalysis?: any; validationErrors?: Record<string, string> } = {};
+): CalculatedMetrics & { assetAnalysis?: AssetAnalysis; validationErrors?: Record<string, string> } {
+  const metrics: CalculatedMetrics & { assetAnalysis?: AssetAnalysis; validationErrors?: Record<string, string> } = {};
   const validationErrors: Record<string, string> = {};
 
   // Cap Rate = (NOI / Purchase Price) × 100
+  // This is a core CRE metric indicating property yield
   if (flags.capRate) {
     try {
       if (hasRequiredDataForMetric('capRate', data)) {
-        metrics.capRate = ((data.currentNOI || 0) / (data.purchasePrice || 1)) * 100;
-        // Cap Rate calculation successful
+        // Ensure non-zero purchase price to avoid division by zero
+        const purchasePrice = data.purchasePrice || 1;
+        const currentNOI = data.currentNOI || 0;
+        
+        metrics.capRate = (currentNOI / purchasePrice) * 100;
+        
+        // Cap Rate validation: typical range 3-12% for CRE
+        if (metrics.capRate < 0 || metrics.capRate > 50) {
+          validationErrors.capRate = 'Cap rate appears unusual - please verify NOI and purchase price';
+        }
       } else {
         const error = getMetricValidationError('capRate', data);
-        validationErrors.capRate = error || 'Validation error';
-        // Cap Rate calculation failed - missing required data
+        validationErrors.capRate = error || 'Missing NOI or purchase price';
       }
     } catch (error) {
       console.error('Error calculating Cap Rate:', error);
@@ -589,7 +602,7 @@ export function calculateMetrics(
         };
       }
     } catch (error) {
-      console.warn('Asset analysis not available for property type:', data.propertyType);
+      console.warn('Asset analysis not available for property type:', data.propertyType, error);
     }
   }
 
@@ -939,7 +952,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
     case 'office-tenant-financial-health':
       if (data.officeTenants?.tenants) {
         const tenants = convertToOfficeTenants(data.officeTenants.tenants);
-        const mockMarketData: MarketIntelligence = {
+        /* const mockMarketData: MarketIntelligence = {
           submarket: {
             name: 'CBD',
             totalInventory: 10000000,
@@ -982,10 +995,10 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
               airports: []
             }
           }
-        };
+        }; */
         
         return {
-          tenantFinancialHealth: analyzeTenantFinancialHealth(tenants, mockMarketData)
+          tenantFinancialHealth: analyzeTenantFinancialHealth(tenants)
         };
       }
       break;
@@ -993,7 +1006,7 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
     case 'office-lease-economics':
       if (data.officeTenants?.tenants) {
         const tenants = convertToOfficeTenants(data.officeTenants.tenants);
-        const mockMarketData: MarketIntelligence = {
+        /* const mockMarketData: MarketIntelligence = {
           submarket: {
             name: 'CBD',
             totalInventory: 10000000,
@@ -1036,10 +1049,10 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
               airports: []
             }
           }
-        };
+        }; */
         
         return {
-          leaseEconomics: analyzeLeaseEconomics(tenants, mockMarketData)
+          leaseEconomics: analyzeLeaseEconomics(tenants, {} as MarketIntelligence)
         };
       }
       break;

@@ -512,7 +512,7 @@ export function analyzeCoTenancy(
   });
   
   const tenantSynergies = Array.from(merchandiseGroups.entries())
-    .filter(([_, group]) => group.length >= 3)
+    .filter(([, group]) => group.length >= 3)
     .map(([category, group]) => {
       // Calculate synergy score based on proximity and performance
       const avgSalesPSF = group.reduce((sum, t) => sum + (t.salesPSF || 0), 0) / group.length;

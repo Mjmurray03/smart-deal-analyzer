@@ -2,207 +2,147 @@
 
 ## Project Overview
 
-**Smart Deal Analyzer** is a comprehensive commercial real estate (CRE) investment analysis platform that empowers investors, brokers, and analysts to make data-driven decisions with confidence. Built with Next.js 15 and TypeScript, it provides sophisticated financial modeling, property-specific metrics, and detailed deal assessments across multiple property types including office, retail, multifamily, industrial, and mixed-use developments.
+**Smart Deal Analyzer** is a beta AI-powered tool for underwriting small-balance commercial real estate deals ($1-10M) in the Dallas-Fort Worth market. Built by a business student passionate about CRE and AI, this tool focuses on simple deal scoring and rent roll analysis to help investors quickly evaluate opportunities in the DFW market.
 
-The platform combines industry-standard calculations with advanced analytics to deliver professional-grade investment analysis tools that traditionally cost thousands of dollars in enterprise software.
+The platform's initial vision centers on DFW market specialization—providing localized deal scoring algorithms and rent roll parsing capabilities tailored specifically to Texas commercial real estate patterns and submarkets.
 
-## ✨ Features
+**Current Status**: Beta v0.1.0 with known UI bugs and calculation issues. Built as a learning project to explore AI applications in commercial real estate underwriting.
 
-### 🔍 **Comprehensive Property Analysis**
-- **Multi-Property Support**: Office, Retail, Multifamily, Industrial, and Mixed-Use properties
-- **Quick & Advanced Analysis Modes**: From 5-minute evaluations to deep-dive comprehensive reports
-- **Property-Specific Metrics**: Tailored calculations for each property type's unique characteristics
+## ✨ Features (Currently Working)
 
-### 📊 **Financial Calculators** 
-- **Cap Rate Calculator**: Calculate capitalization rates for property evaluation
-- **Cash-on-Cash Return Calculator**: Analyze return on invested capital
-- **Gross Rent Multiplier (GRM)**: Property price vs rental income analysis
-- **Price per Square Foot**: Market price comparison tool
+### 📊 **Core Calculators**
+- **Cap Rate Calculator**: Standard capitalization rate analysis
+- **Cash-on-Cash Return**: Calculate return on invested capital
+- **Gross Rent Multiplier (GRM)**: Property price vs rental income analysis  
+- **Price per Square Foot**: Market comparison tool
 
-### 🎯 **Advanced Analytics**
-- **Deal Assessment Scoring**: Comprehensive property evaluation framework
-- **Property-Specific Metrics**: Detailed calculations for each property type
-- **Risk Assessment**: Built-in risk analysis capabilities
-- **Performance Metrics**: 50+ financial and operational metrics
+### 🏢 **Property Support**
+- **5 Property Types**: Office, Retail, Multifamily, Industrial, Mixed-Use
+- **Basic Analysis Modes**: Quick screening and detailed input forms
+- **DFW Market Focus**: Designed with Dallas-Fort Worth market patterns in mind
 
-### 💼 **Professional Features**
-- **Interactive Interface**: Dynamic forms and real-time calculations
-- **Mobile-Responsive Design**: Optimized for all device sizes
-- **Modern UI/UX**: Clean, professional interface design
-- **Comprehensive Analysis**: Detailed property evaluation workflows
+### 💻 **Technical Features**
+- **Mobile-Responsive UI**: Works on desktop, tablet, and mobile devices
+- **Modern Stack**: Next.js 15, React 19, TypeScript 5
+- **Basic PDF Reports**: Export simple analysis summaries
+- **Local Storage**: Save draft analyses
 
 ## 🚀 Installation
 
 ### Prerequisites
-- **Node.js** 18.0 or higher
-- **npm** 9.0 or higher (or **yarn** 1.22+)
+- Node.js 18.0 or higher
+- npm 9.0 or higher
 
-### Setup Instructions
-
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/yourusername/smart-deal-analyzer.git
-   cd smart-deal-analyzer
-   ```
-
-2. **Install dependencies**
-   ```bash
-   npm install
-   # or
-   yarn install
-   ```
-
-3. **Run the development server**
-   ```bash
-   npm run dev
-   # or
-   yarn dev
-   ```
-
-4. **Open your browser**
-   Navigate to [http://localhost:3000](http://localhost:3000) to view the application.
-
-### Production Build
+### Setup
 ```bash
-npm run build
-npm start
+# Clone the repository
+git clone https://github.com/Mjmurray03/smart-deal-analyzer.git
+cd smart-deal-analyzer
+
+# Install dependencies
+npm install
+
+# Start development server
+npm run dev
 ```
+
+Open [http://localhost:3000](http://localhost:3000) to view the application.
 
 ## 📖 Usage
 
-### Quick Start Guide
+### Quick Start
+1. **Select Calculator**: Choose from Cap Rate, Cash-on-Cash, GRM, or Price/SF
+2. **Input Deal Data**: Enter property financials (NOI, purchase price, etc.)
+3. **Get Results**: Review calculated metrics and basic deal scoring
 
-1. **Choose Your Analysis Type**
-   - **Quick Analysis**: 5-minute property evaluation
-   - **Advanced Analysis**: Comprehensive 50+ metric assessment
-
-2. **Select Property Type**
-   - Office buildings
-   - Retail centers
-   - Multifamily properties
-   - Industrial facilities
-   - Mixed-use developments
-
-3. **Input Property Data**
-   - Basic financials (purchase price, NOI, rent roll)
-   - Property specifics (square footage, unit mix, tenant details)
-   - Market assumptions (cap rates, growth rates)
-
-4. **Review Results**
-   - Interactive dashboard with key metrics
-   - Deal assessment and recommendations
-   - Detailed analysis summaries
-
-### Example Analysis Workflow
-
+### Example: DFW Office Building Analysis
 ```javascript
-// Quick Cap Rate Calculation
-const capRate = (netOperatingIncome / propertyValue) * 100;
+// Sample deal data (see public/sample-deal.json)
+{
+  "propertyType": "office",
+  "purchasePrice": 2500000,
+  "currentNOI": 180000,
+  "squareFootage": 15000,
+  "location": "Dallas CBD"
+}
 
-// Advanced Multifamily Analysis
-const analysis = {
-  propertyType: 'multifamily',
-  units: 50,
-  avgRent: 2500,
-  occupancy: 0.95,
-  expenses: 0.45 // as ratio of income
-};
+// Expected Results:
+// Cap Rate: 7.2%
+// Price/SF: $167
+// Deal Score: B+ (for DFW office market)
 ```
 
-### Calculator Examples
+### Sample Data
+Check `public/sample-deal.json` for example property data you can use to test the analyzers.
 
-**Cap Rate Calculator**
-- Input: Property Price ($2,000,000), Annual NOI ($140,000)
-- Output: Cap Rate (7.0%), Investment Grade (B+)
+## 🚧 Current Status
 
-**Cash-on-Cash Calculator** 
-- Input: Down Payment ($500,000), Annual Cash Flow ($35,000)
-- Output: Cash-on-Cash Return (7.0%)
+**Beta Version 0.1.0** - This is an early-stage project with known limitations:
+
+### Known Issues
+- **UI Bugs**: Form overlaps and mobile layout issues
+- **Calculation Errors**: Some edge cases not handled properly
+- **Performance**: Occasional slowness with large datasets
+- **Incomplete Features**: Advanced analysis modes are basic
+
+### Feedback Welcome
+- **GitHub Issues**: Report bugs or suggest features
+- **LinkedIn DM**: Connect with me [@Mjmurray03](https://linkedin.com/in/mjmurray03) for discussion
+- **Pull Requests**: Contributions are encouraged!
+
+## 🤝 Contributing
+
+I welcome contributions from the community! This is a learning project, and I'd love to collaborate with other developers and CRE professionals.
+
+### How to Contribute
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/improvement`)
+3. Make your changes and test locally
+4. Commit with clear messages
+5. Push and create a Pull Request
+
+### Areas Needing Help
+- UI/UX improvements and bug fixes
+- Calculation accuracy and edge cases
+- DFW market data integration ideas
+- Performance optimizations
+
+## 👨‍💼 About
+
+Hi! I'm Michael Murray, a 21-year-old business student passionate about the intersection of commercial real estate and artificial intelligence. This project represents my exploration of how AI can streamline CRE underwriting, starting with the Dallas-Fort Worth market I know well.
+
+**Why DFW?** By focusing on a single market initially, I can build deeper, more accurate analysis tools rather than trying to solve everything at once. The goal is to create genuinely useful software for small-balance CRE investors in Texas.
+
+**Read More**: Check out my LinkedIn article about AI in commercial real estate (July 23, 2025) for the full vision behind this project.
 
 ## 🛠️ Technology Stack
 
 - **Frontend**: Next.js 15.3.3, React 19, TypeScript 5
 - **Styling**: Tailwind CSS 4 with custom design system
-- **Animation**: Framer Motion for smooth interactions
+- **Animation**: Framer Motion
 - **Testing**: Jest with TypeScript support
-- **Build Tools**: Next.js optimized build pipeline
 - **Deployment**: Vercel-ready configuration
 
-## 🏗️ Architecture
+## 📊 Project Roadmap
 
-```
-├── app/                    # Next.js 15 App Router
-│   ├── analyzer/          # Property analysis pages
-│   ├── calculators/       # Financial calculators
-│   └── page.tsx          # Homepage
-├── components/            # Reusable UI components
-│   ├── ui/               # Base design system
-│   ├── navigation/       # Navigation components
-│   └── results/          # Analysis result components
-├── lib/                  # Business logic
-│   ├── calculations/     # Financial calculation engine
-│   ├── types.ts         # TypeScript definitions
-│   └── utils.ts         # Utility functions
-└── public/              # Static assets
-```
+### Immediate (Q1 2025)
+- Fix UI bugs and improve mobile experience
+- Enhance calculation accuracy and validation
+- Add more DFW-specific market data
 
-## 🤝 Contributing
+### Medium-term (Q2-Q3 2025)
+- Improved rent roll analysis capabilities
+- User authentication and saved analyses
+- Enhanced PDF reporting
 
-We welcome contributions from the community! Whether you're fixing bugs, adding features, or improving documentation, your help makes Smart Deal Analyzer better for everyone.
-
-### How to Contribute
-
-1. **Fork the repository**
-2. **Create a feature branch** (`git checkout -b feature/amazing-feature`)
-3. **Make your changes** and add tests if applicable
-4. **Commit your changes** (`git commit -m 'Add amazing feature'`)
-5. **Push to your branch** (`git push origin feature/amazing-feature`)
-6. **Open a Pull Request**
-
-### Development Guidelines
-
-- Follow TypeScript best practices
-- Add tests for new features
-- Update documentation as needed
-- Follow the existing code style
-- Ensure all tests pass before submitting
-
-### Bug Reports & Feature Requests
-
-Please use our [GitHub Issues](https://github.com/yourusername/smart-deal-analyzer/issues) to report bugs or request features. Include:
-- Clear description of the issue/feature
-- Steps to reproduce (for bugs)
-- Expected vs actual behavior
-- Screenshots if relevant
-
-## 📊 Project Status
-
-**Current Status**: 🚧 Active Development (Beta v0.1.0)
-
-### Recent Updates
-- ✅ Complete UI/UX redesign with modern components
-- ✅ Core calculation engine with financial metrics
-- ✅ Multi-property type support (5 types)
-- ✅ Basic calculators (Cap Rate, Cash-on-Cash, GRM, Price/SF)
-- ✅ Mobile-responsive design
-
-### Roadmap
-- 📅 **Q2 2025**: User authentication and saved analyses
-- 📅 **Q3 2025**: Market data API integration
-- 📅 **Q3 2025**: Advanced charting and visualization
-- 📅 **Q4 2025**: PDF report generation and Excel export
-- 📅 **Q4 2025**: Complete advanced analysis package features
-
-### Key Statistics
-- 📊 **Core Metrics**: Essential financial analysis calculations
-- 🏢 **5 Property Types**: Office, Retail, Multifamily, Industrial, Mixed-Use
-- 🧮 **4 Calculators**: Cap Rate, Cash-on-Cash, GRM, Price per SF
-- 📱 **Fully Responsive**: Works on desktop, tablet, and mobile
-- ⚡ **Modern Stack**: Next.js 15, React 19, TypeScript 5
+### Long-term (Q4 2025)
+- Advanced DFW submarket scoring
+- Integration with public data sources
+- Expanded Texas market coverage
 
 ## 📄 License
 
-This project is proprietary software with all rights reserved - see the [LICENSE](LICENSE) file for details.
+This project is proprietary software with all rights reserved.
 
 **Copyright (c) 2025 Michael Murray. All Rights Reserved.**
 
@@ -211,12 +151,11 @@ For licensing inquiries, please contact: mjmurray234@gmail.com
 ## 🙏 Acknowledgments
 
 - **Next.js Team** for the incredible framework
-- **Tailwind CSS** for the utility-first styling approach
-- **Framer Motion** for smooth animations
-- **CRE Industry Professionals** for domain expertise and feedback
+- **DFW CRE Community** for inspiration and market insights
+- **Fellow Students** and **Mentors** who provided feedback and encouragement
 
 ---
 
-**Built with ❤️ for the commercial real estate community**
+**Built with ❤️ by a business student passionate about CRE + AI**
 
-*Ready to analyze your next deal? [Get started now!](http://localhost:3000)*
+*Interested in the vision? Read my [LinkedIn article](https://linkedin.com/in/mjmurray03) about AI's role in commercial real estate.*

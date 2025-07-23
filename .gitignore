@@ -49,3 +49,8 @@ next-env.d.ts
 
 # dist
 dist/
+
+# temp/cleanup files
+.claude
+.onedriveignore
+lint-errors.txt

@@ -23,6 +23,7 @@ import EnhancedInput from '@/components/ui/EnhancedInput';
 import { cn } from '@/lib/design-system/utils';
 import { PropertyData } from '@/lib/calculations/types';
 import { FieldDefinition } from '@/lib/calculations/packages/enhanced-package-types';
+import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 interface EnhancedDynamicInputFormProps {
   requiredFields: FieldDefinition[] | (keyof PropertyData)[];
@@ -632,9 +633,15 @@ export default function EnhancedDynamicInputForm({
                            (packageType?.split('-')[0]?.slice(1) || '') || 'Property';
 
   return (
-    <form className="w-full">
-      {/* Progress indicator - fixed positioning to prevent overlap */}
-      <div className="mb-8 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
+    <ErrorBoundary fallback={
+      <div className="p-8 text-center">
+        <h3 className="text-lg font-semibold text-red-600 mb-2">Form Error</h3>
+        <p className="text-gray-600">There was an error loading the form. Please refresh the page.</p>
+      </div>
+    }>
+      <form className="w-full max-w-4xl mx-auto">
+        {/* Progress indicator - improved spacing and positioning */}
+        <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative z-10">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-gray-700">
             Form Completion
@@ -682,9 +689,9 @@ export default function EnhancedDynamicInputForm({
           const isExpanded = expandedSections[group.id];
 
           return (
-            <Card key={group.id} variant="bordered" className="transition-all duration-200 ease-in-out shadow-sm hover:shadow-md">
+            <Card key={group.id} variant="bordered" className="transition-all duration-200 ease-in-out shadow-sm hover:shadow-md relative z-0">
               <CardHeader 
-                className="cursor-pointer select-none hover:bg-gray-50 transition-colors"
+                className="cursor-pointer select-none hover:bg-gray-50 transition-colors relative z-10"
                 onClick={() => toggleSection(group.id)}
               >
                 <div className="flex items-center justify-between">
@@ -728,10 +735,10 @@ export default function EnhancedDynamicInputForm({
                 isExpanded ? "max-h-none opacity-100" : "max-h-0 opacity-0"
               )}>
                 {isExpanded && (
-                  <CardBody className="pt-6 pb-8">
-                    <div className="flex flex-col gap-6">
+                  <CardBody className="pt-6 pb-8 relative z-0">
+                    <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
                       {group.fields.map((fieldName) => (
-                        <div key={fieldName} className="w-full">
+                        <div key={fieldName} className="w-full relative">
                           {renderField(fieldName)}
                         </div>
                       ))}
@@ -782,5 +789,6 @@ export default function EnhancedDynamicInputForm({
         </div>
       </div>
     </form>
+    </ErrorBoundary>
   );
 }

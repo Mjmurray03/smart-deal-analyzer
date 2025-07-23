@@ -1,0 +1,61 @@
+{
+  "dealName": "DFW Office Building - Sample Analysis",
+  "propertyType": "office",
+  "location": {
+    "address": "123 Main Street, Dallas, TX 75201",
+    "submarket": "Dallas CBD",
+    "city": "Dallas",
+    "state": "TX",
+    "zipCode": "75201"
+  },
+  "financials": {
+    "purchasePrice": 2500000,
+    "downPayment": 625000,
+    "loanAmount": 1875000,
+    "interestRate": 6.5,
+    "loanTerm": 25,
+    "currentNOI": 180000,
+    "projectedNOI": 185000,
+    "grossRent": 240000,
+    "operatingExpenses": 60000,
+    "capExReserves": 12000,
+    "vacancyRate": 8
+  },
+  "propertyDetails": {
+    "squareFootage": 15000,
+    "buildingClass": "B+",
+    "yearBuilt": 1995,
+    "numberOfUnits": 12,
+    "parkingSpaces": 45,
+    "occupancyRate": 92
+  },
+  "marketMetrics": {
+    "marketCapRate": 7.0,
+    "marketRentPSF": 18.50,
+    "averagePricePSF": 165,
+    "marketVacancy": 12.5
+  },
+  "calculatedMetrics": {
+    "capRate": 7.2,
+    "cashOnCashReturn": 8.8,
+    "grossRentMultiplier": 10.4,
+    "pricePerSquareFoot": 167,
+    "debtServiceCoverageRatio": 1.25,
+    "loanToValue": 75
+  },
+  "dealScore": {
+    "overallScore": "B+",
+    "strengths": [
+      "Strong CBD location",
+      "Below-market vacancy",
+      "Solid NOI growth potential"
+    ],
+    "concerns": [
+      "Higher than market cap rate",
+      "Older building requiring CapEx",
+      "Limited parking ratio"
+    ]
+  },
+  "analysisNotes": "This sample represents a typical small-balance office deal in the Dallas CBD market. The property benefits from prime location but faces challenges from an aging building stock. Deal scoring reflects DFW market conditions as of 2025.",
+  "lastUpdated": "2025-07-23T12:00:00Z"
+}
