@@ -202,7 +202,11 @@ Please use our [GitHub Issues](https://github.com/yourusername/smart-deal-analyz
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is proprietary software with all rights reserved - see the [LICENSE](LICENSE) file for details.
+
+**Copyright (c) 2025 Michael Murray. All Rights Reserved.**
+
+For licensing inquiries, please contact: mjmurray234@gmail.com
 
 ## 🙏 Acknowledgments
 
