@@ -197,7 +197,7 @@ export const enhancedMultifamilyPackages: EnhancedCalculationPackage[] = [
         subFields: [
           { field: 'rubs', type: 'boolean', label: 'RUBS (Ratio Utility Billing)' },
           { field: 'masterMetered', type: 'boolean', label: 'Master Metered' },
-          FieldDefinitionFactory.currency('avgPerUnit', 'Average Cost Per Unit')
+          { field: 'avgPerUnit', type: 'number', label: 'Average Cost Per Unit', required: true }
         ]
       }
     ],
@@ -331,7 +331,7 @@ export const enhancedMultifamilyPackages: EnhancedCalculationPackage[] = [
             label: 'Renovation Item',
             options: ['Kitchen Renovation', 'Bathroom Renovation', 'Flooring', 'Appliances', 'HVAC', 'Windows', 'Balcony/Patio', 'In-Unit Laundry', 'Other']
           },
-          FieldDefinitionFactory.currency('costPerUnit', 'Cost Per Unit'),
+          { field: 'costPerUnit', type: 'number', label: 'Cost Per Unit', required: true },
           { field: 'timeline', type: 'number', label: 'Timeline (months)' },
           FieldDefinitionFactory.currency('rentIncrease', 'Expected Rent Increase')
         ]
@@ -363,7 +363,7 @@ export const enhancedMultifamilyPackages: EnhancedCalculationPackage[] = [
           { field: 'renovated', type: 'boolean', label: 'Recently Renovated' },
           FieldDefinitionFactory.currency('beforeRent', 'Rent Before Renovation'),
           FieldDefinitionFactory.currency('afterRent', 'Rent After Renovation'),
-          FieldDefinitionFactory.currency('cost', 'Renovation Cost Per Unit')
+          { field: 'cost', type: 'number', label: 'Renovation Cost Per Unit', required: true }
         ]
       },
       {

@@ -37,7 +37,7 @@ export const enhancedRetailPackages: EnhancedCalculationPackage[] = [
           },
           { field: 'gla', type: 'number', label: 'GLA (sq ft)', required: true },
           FieldDefinitionFactory.currency('annualSales', 'Annual Sales'),
-          FieldDefinitionFactory.currency('salesPSF', 'Sales Per Square Foot'),
+          { field: 'salesPSF', type: 'number', label: 'Sales Per Square Foot', required: true },
           FieldDefinitionFactory.percentage('occupancyCost', 'Occupancy Cost Ratio'),
           FieldDefinitionFactory.currency('percentageRent', 'Percentage Rent Paid')
         ]
@@ -81,7 +81,7 @@ export const enhancedRetailPackages: EnhancedCalculationPackage[] = [
         type: 'object',
         label: 'Industry Benchmarks',
         subFields: [
-          FieldDefinitionFactory.currency('avgSalesPSF', 'Average Sales PSF'),
+          { field: 'avgSalesPSF', type: 'number', label: 'Average Sales Per SqFt', required: true },
           FieldDefinitionFactory.percentage('avgOccupancyCost', 'Average Occupancy Cost')
         ]
       }

@@ -380,10 +380,22 @@ export function calculateMetrics(
     }
   }
 
-  // GRM = Purchase Price / Gross Income
+  // GRM = Purchase Price / Gross Income or Gross Rent
   if (flags.grm) {
     if (hasRequiredDataForMetric('grm', data)) {
-      metrics.grm = (data.purchasePrice || 0) / (data.grossIncome || 1);
+      // Prioritize calculated gross rent if available
+      let grossRevenue = data.grossRent || data.grossIncome;
+      
+      // If rentPerSF and occupancyRate are available, calculate gross rent
+      if (!grossRevenue && data.rentPerSF && data.occupancyRate && data.squareFootage) {
+        grossRevenue = data.squareFootage * data.rentPerSF * (data.occupancyRate / 100);
+      }
+      
+      if (grossRevenue && grossRevenue > 0) {
+        metrics.grm = (data.purchasePrice || 0) / grossRevenue;
+      } else {
+        validationErrors.grm = 'Unable to calculate GRM: no gross revenue data available';
+      }
     } else {
       const error = getMetricValidationError('grm', data);
       validationErrors.grm = error || 'Validation error';
@@ -2273,10 +2285,22 @@ function calculatePackageMetrics(packageId: string, data: PropertyData): any {
       }
       
       // GRM = Purchase Price / Gross Annual Income
-      if (data.purchasePrice && data.currentNOI && data.currentNOI > 0) {
-        // Estimate gross income as NOI / 0.75 (assuming 75% NOI ratio)
-        const estimatedGrossIncome = data.currentNOI / 0.75;
-        quickOfficeResults.grm = data.purchasePrice / estimatedGrossIncome;
+      if (data.purchasePrice) {
+        let grossRevenue = data.grossRent || data.grossIncome;
+        
+        // Calculate gross rent from rentPerSF and occupancyRate if available
+        if (!grossRevenue && data.rentPerSF && data.occupancyRate && data.squareFootage) {
+          grossRevenue = data.squareFootage * data.rentPerSF * (data.occupancyRate / 100);
+        }
+        
+        // Fallback to estimate from NOI
+        if (!grossRevenue && data.currentNOI && data.currentNOI > 0) {
+          grossRevenue = data.currentNOI / 0.75; // assuming 75% NOI ratio
+        }
+        
+        if (grossRevenue && grossRevenue > 0) {
+          quickOfficeResults.grm = data.purchasePrice / grossRevenue;
+        }
       }
       
       return quickOfficeResults;

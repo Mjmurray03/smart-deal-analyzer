@@ -398,7 +398,7 @@ export const enhancedMixedUsePackages: EnhancedCalculationPackage[] = [
             label: 'Use Type',
             options: ['Residential', 'Retail', 'Office', 'Hotel', 'Entertainment', 'Parking', 'Common Areas']
           },
-          FieldDefinitionFactory.currency('costPSF', 'Cost per Square Foot'),
+          { field: 'costPSF', type: 'number', label: 'Cost Per Square Foot', required: true },
           { field: 'timeline', type: 'number', label: 'Construction Timeline (months)' }
         ]
       }

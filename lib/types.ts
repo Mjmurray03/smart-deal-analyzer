@@ -18,11 +18,41 @@ export interface PropertyData {
   currentNOI: number;
   projectedNOI: number;
   grossIncome: number;
+  grossRent?: number;
   operatingExpenses: number;
   annualCashFlow: number;
   totalInvestment: number;
   occupancyRate: number;
+  rentPerSF?: number;
   averageRent: number;
+  parkingIncome?: number;
+  
+  // Retail-specific rent fields
+  baseRentPSF?: number;
+  camPSF?: number;
+  percentageRent?: number;
+  anchorTenantRent?: number;
+  
+  // Industrial-specific rent fields
+  warehouseRentPSF?: number;
+  officeRentPSF?: number;
+  officePercentage?: number;
+  numberOfDocks?: number;
+  
+  // Multifamily-specific fields
+  averageRentPerUnit?: number;
+  otherIncome?: number;
+  unitMix?: string;
+  
+  // Mixed-use specific fields
+  retailSF?: number;
+  officeSF?: number;
+  residentialUnits?: number;
+  retailRentPSF?: number;
+  avgResidentialRent?: number;
+  retailOccupancy?: number;
+  officeOccupancy?: number;
+  residentialOccupancy?: number;
   
   // Loan Information
   loanAmount: number;
@@ -189,7 +219,6 @@ export interface PropertyData {
   infrastructureReadiness?: number;
   
   // Multifamily-specific
-  unitMix?: any[];
   averageUnitSize?: number;
   amenities?: string[];
   marketRent?: number;
@@ -199,9 +228,7 @@ export interface PropertyData {
   propertyManagement?: number;
   vacancyLoss?: number;
   badDebt?: number;
-  otherIncome?: number;
   utilityReimbursements?: number;
-  parkingIncome?: number;
   storageIncome?: number;
   petRent?: number;
   applicationFees?: number;
@@ -403,13 +430,10 @@ export interface PropertyData {
   recentSales?: any;
   propertyClass?: any;
   totalSF?: any;
-  retailSF?: any;
-  officeSF?: any;
   residentialSF?: any;
   hotelKeys?: any;
   retailGLA_breakdown?: any;
   officeRSF?: any;
-  residentialUnits?: any;
   retailNOI?: any;
   officeNOI?: any;
   residentialNOI?: any;
@@ -711,7 +735,6 @@ export interface PropertyData {
   // Additional missing fields with exact casing from packages
   weightedAverageLeaseTerm?: number;
   grossLeasableArea?: number;
-  averageRentPerUnit?: number;
   currentRentPSF?: number;
   loadingDocks?: number;
   driveInDoors?: number;

@@ -95,7 +95,7 @@ const testMultifamilyData: PropertyData = {
   operatingExpenses: 100000,
   discountRate: 5.5,
   holdingPeriod: 12,
-  unitMix: [],
+  unitMix: '40 units total',
   squareFootage: 40000,
   numberOfUnits: 40,
   parkingSpaces: 60,

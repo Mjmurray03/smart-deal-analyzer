@@ -285,30 +285,11 @@ export default function ResultsPage() {
     };
   };
 
-  // Get key metrics for executive summary
+  // Get key metrics for executive summary based on property type
   const getKeyMetrics = (): KeyMetric[] => {
     const metrics: KeyMetric[] = [];
-
-    if (calculatedMetrics.cashOnCashReturn !== undefined) {
-      metrics.push({
-        key: 'cashOnCashReturn',
-        label: 'Cash-on-Cash Return',
-        value: `${(calculatedMetrics.cashOnCashReturn as number).toFixed(2)}%`,
-        benchmark: '10%',
-        performance: (calculatedMetrics.cashOnCashReturn as number) >= 10 ? 'above' : 'below'
-      });
-    }
-
-    if (calculatedMetrics.irr !== undefined) {
-      metrics.push({
-        key: 'irr',
-        label: 'IRR (5-Year)',
-        value: `${(calculatedMetrics.irr as number).toFixed(2)}%`,
-        benchmark: '15%',
-        performance: (calculatedMetrics.irr as number) >= 15 ? 'above' : 'below'
-      });
-    }
-
+    
+    // Always show Cap Rate first if available
     if (calculatedMetrics.capRate !== undefined) {
       metrics.push({
         key: 'capRate',
@@ -319,33 +300,200 @@ export default function ResultsPage() {
       });
     }
 
-    if (calculatedMetrics.dscr !== undefined) {
+    // Property type specific metrics
+    switch (propertyType) {
+      case 'office':
+        // Office: Cap Rate, Cash-on-Cash, DSCR, GRM
+        if (calculatedMetrics.cashOnCash !== undefined) {
+          metrics.push({
+            key: 'cashOnCash',
+            label: 'Cash-on-Cash',
+            value: `${(calculatedMetrics.cashOnCash as number).toFixed(2)}%`,
+            benchmark: '8%',
+            performance: (calculatedMetrics.cashOnCash as number) >= 8 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.dscr !== undefined) {
+          metrics.push({
+            key: 'dscr',
+            label: 'DSCR',
+            value: (calculatedMetrics.dscr as number).toFixed(2),
+            benchmark: '1.25',
+            performance: (calculatedMetrics.dscr as number) >= 1.25 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.grm !== undefined) {
+          metrics.push({
+            key: 'grm',
+            label: 'GRM',
+            value: (calculatedMetrics.grm as number).toFixed(1),
+            benchmark: '10.0',
+            performance: (calculatedMetrics.grm as number) <= 10 ? 'above' : 'below'
+          });
+        }
+        break;
+        
+      case 'retail':
+        // Retail: Cap Rate, Sales PSF, Occupancy Cost Ratio, GRM
+        if (calculatedMetrics.salesPerSF !== undefined && calculatedMetrics.salesPerSF) {
+          const salesData = calculatedMetrics.salesPerSF as any;
+          metrics.push({
+            key: 'salesPerSF',
+            label: 'Avg Sales/SF',
+            value: `$${salesData.average?.toFixed(0) || '0'}`,
+            benchmark: '$400',
+            performance: (salesData.average || 0) >= 400 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.occupancyCostRatio !== undefined) {
+          metrics.push({
+            key: 'occupancyCostRatio',
+            label: 'Occupancy Cost',
+            value: `${(calculatedMetrics.occupancyCostRatio as number).toFixed(1)}%`,
+            benchmark: '10%',
+            performance: (calculatedMetrics.occupancyCostRatio as number) <= 10 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.grm !== undefined) {
+          metrics.push({
+            key: 'grm',
+            label: 'GRM',
+            value: (calculatedMetrics.grm as number).toFixed(1),
+            benchmark: '8.0',
+            performance: (calculatedMetrics.grm as number) <= 8 ? 'above' : 'below'
+          });
+        }
+        break;
+        
+      case 'industrial':
+        // Industrial: Cap Rate, Price per SF, Rent per SF, Clear Height Value
+        if (calculatedMetrics.pricePerSF !== undefined) {
+          metrics.push({
+            key: 'pricePerSF',
+            label: 'Price/SF',
+            value: `$${(calculatedMetrics.pricePerSF as number).toFixed(0)}`,
+            benchmark: '$150',
+            performance: (calculatedMetrics.pricePerSF as number) <= 150 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.effectiveRentPSF !== undefined) {
+          metrics.push({
+            key: 'rentPerSF',
+            label: 'Rent/SF',
+            value: `$${(calculatedMetrics.effectiveRentPSF as number).toFixed(2)}`,
+            benchmark: '$12',
+            performance: (calculatedMetrics.effectiveRentPSF as number) >= 12 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.clearHeightAnalysis !== undefined) {
+          const clearHeight = calculatedMetrics.clearHeightAnalysis as any;
+          metrics.push({
+            key: 'clearHeight',
+            label: 'Clear Height',
+            value: clearHeight.clearHeightCategory || 'Standard',
+            benchmark: 'Modern',
+            performance: clearHeight.clearHeightCategory === 'Modern' ? 'above' : 'below'
+          });
+        }
+        break;
+        
+      case 'multifamily':
+        // Multifamily: Cap Rate, Price per Unit, GRM, Cash-on-Cash
+        if (calculatedMetrics.pricePerUnit !== undefined) {
+          metrics.push({
+            key: 'pricePerUnit',
+            label: 'Price/Unit',
+            value: `$${((calculatedMetrics.pricePerUnit as number) || 0).toLocaleString()}`,
+            benchmark: '$200k',
+            performance: (calculatedMetrics.pricePerUnit as number) <= 200000 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.grm !== undefined) {
+          metrics.push({
+            key: 'grm',
+            label: 'GRM',
+            value: (calculatedMetrics.grm as number).toFixed(1),
+            benchmark: '12.0',
+            performance: (calculatedMetrics.grm as number) <= 12 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.cashOnCash !== undefined) {
+          metrics.push({
+            key: 'cashOnCash',
+            label: 'Cash-on-Cash',
+            value: `${(calculatedMetrics.cashOnCash as number).toFixed(2)}%`,
+            benchmark: '7%',
+            performance: (calculatedMetrics.cashOnCash as number) >= 7 ? 'above' : 'below'
+          });
+        }
+        break;
+        
+      case 'mixed-use':
+        // Mixed-Use: Blended Cap Rate, Component NOIs, Overall GRM
+        if (calculatedMetrics.componentAnalysis !== undefined) {
+          const components = calculatedMetrics.componentAnalysis as any;
+          metrics.push({
+            key: 'blendedCap',
+            label: 'Blended Cap',
+            value: `${(components.blendedCapRate || 0).toFixed(2)}%`,
+            benchmark: '6.5%',
+            performance: (components.blendedCapRate || 0) >= 6.5 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.grm !== undefined) {
+          metrics.push({
+            key: 'grm',
+            label: 'Overall GRM',
+            value: (calculatedMetrics.grm as number).toFixed(1),
+            benchmark: '11.0',
+            performance: (calculatedMetrics.grm as number) <= 11 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.cashOnCash !== undefined) {
+          metrics.push({
+            key: 'cashOnCash',
+            label: 'Cash-on-Cash',
+            value: `${(calculatedMetrics.cashOnCash as number).toFixed(2)}%`,
+            benchmark: '7.5%',
+            performance: (calculatedMetrics.cashOnCash as number) >= 7.5 ? 'above' : 'below'
+          });
+        }
+        break;
+        
+      default:
+        // Default metrics for unknown property types
+        if (calculatedMetrics.cashOnCash !== undefined) {
+          metrics.push({
+            key: 'cashOnCash',
+            label: 'Cash-on-Cash',
+            value: `${(calculatedMetrics.cashOnCash as number).toFixed(2)}%`,
+            benchmark: '8%',
+            performance: (calculatedMetrics.cashOnCash as number) >= 8 ? 'above' : 'below'
+          });
+        }
+        if (calculatedMetrics.dscr !== undefined) {
+          metrics.push({
+            key: 'dscr',
+            label: 'DSCR',
+            value: (calculatedMetrics.dscr as number).toFixed(2),
+            benchmark: '1.25',
+            performance: (calculatedMetrics.dscr as number) >= 1.25 ? 'above' : 'below'
+          });
+        }
+    }
+
+    // Add IRR if available and we have space
+    if (metrics.length < 4 && calculatedMetrics.irr !== undefined) {
       metrics.push({
-        key: 'dscr',
-        label: 'DSCR',
-        value: (calculatedMetrics.dscr as number).toFixed(2),
-        benchmark: '1.25',
-        performance: (calculatedMetrics.dscr as number) >= 1.25 ? 'above' : 'below'
+        key: 'irr',
+        label: 'IRR (5-Year)',
+        value: `${(calculatedMetrics.irr as number).toFixed(2)}%`,
+        benchmark: '15%',
+        performance: (calculatedMetrics.irr as number) >= 15 ? 'above' : 'below'
       });
     }
 
-    if (calculatedMetrics.totalInvestment !== undefined) {
-      metrics.push({
-        key: 'totalInvestment',
-        label: 'Total Investment',
-        value: `$${((calculatedMetrics.totalInvestment as number) || 0).toLocaleString()}`
-      });
-    }
-
-    if (calculatedMetrics.monthlyProfit !== undefined) {
-      metrics.push({
-        key: 'monthlyProfit',
-        label: 'Monthly Cash Flow',
-        value: `$${((calculatedMetrics.monthlyProfit as number) || 0).toLocaleString()}`
-      });
-    }
-
-    return metrics.slice(0, 6); // Return top 6 metrics
+    return metrics.slice(0, 4); // Return top 4 metrics for cleaner display
   };
 
   // Get metric categories
@@ -837,7 +985,7 @@ export default function ResultsPage() {
                 <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
                   <TrendingUp className="w-5 h-5 text-green-600" />
                 </div>
-                <h3 className="text-lg font-semibold">Strengths</h3>
+                <h3 className="text-lg font-semibold mb-3">Strengths</h3>
               </div>
             </CardHeader>
             <CardBody>
@@ -859,7 +1007,7 @@ export default function ResultsPage() {
                 <div className="w-10 h-10 bg-amber-100 rounded-lg flex items-center justify-center">
                   <AlertTriangle className="w-5 h-5 text-amber-600" />
                 </div>
-                <h3 className="text-lg font-semibold">Considerations</h3>
+                <h3 className="text-lg font-semibold mb-3">Considerations</h3>
               </div>
             </CardHeader>
             <CardBody>
@@ -881,7 +1029,7 @@ export default function ResultsPage() {
                 <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
                   <ArrowRight className="w-5 h-5 text-blue-600" />
                 </div>
-                <h3 className="text-lg font-semibold">Recommended Actions</h3>
+                <h3 className="text-lg font-semibold mb-3">Recommended Actions</h3>
               </div>
             </CardHeader>
             <CardBody>

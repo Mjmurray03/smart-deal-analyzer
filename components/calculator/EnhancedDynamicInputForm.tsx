@@ -23,7 +23,6 @@ import EnhancedInput from '@/components/ui/EnhancedInput';
 import { cn } from '@/lib/design-system/utils';
 import { PropertyData } from '@/lib/calculations/types';
 import { FieldDefinition } from '@/lib/calculations/packages/enhanced-package-types';
-import { ErrorBoundary } from '@/components/ui/ErrorBoundary';
 
 interface EnhancedDynamicInputFormProps {
   requiredFields: FieldDefinition[] | (keyof PropertyData)[];
@@ -192,12 +191,11 @@ export default function EnhancedDynamicInputForm({
   
   useEffect(() => {
     setExpandedSections(prev => {
-      // Initialize all sections as closed for consistent behavior
+      // Only initialize if we don't have any sections set yet
       const hasExistingSections = Object.keys(prev).length > 0;
       
-      if (!hasExistingSections) {
-        // Start with all sections closed
-        return {};
+      if (!hasExistingSections && firstGroupId) {
+        return { [firstGroupId]: true };
       }
       
       return prev;
@@ -477,27 +475,27 @@ export default function EnhancedDynamicInputForm({
     }
 
     return (
-      <div key={field} className="flex flex-col w-full space-y-2">
+      <div key={field} className="group relative">
         <EnhancedInput
-            headerText={label || field}
-            value={String(value || '')}
-            onValueChange={createSafeOnChangeHandler(field)}
-            {...(error ? { error } : {})}
-            {...(helperText || description ? { helper: helperText || description } : {})}
-            required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
-            {...(placeholder ? { placeholder } : {})}
-            success={Boolean(value) && !error}
-            autoDetectType={true}
-            showTypeIndicator={true}
-            {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
-          />
+          headerText={label || field}
+          value={String(value || '')}
+          onValueChange={createSafeOnChangeHandler(field)}
+          {...(error ? { error } : {})}
+          {...(helperText || description ? { helper: helperText || description } : {})}
+          required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
+          {...(placeholder ? { placeholder } : {})}
+          success={Boolean(value) && !error}
+          autoDetectType={true}
+          showTypeIndicator={true}
+          {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
+        />
         
         {/* Smart suggestion with improved positioning */}
         {suggestion && !value && (
           <button
             type="button"
             onClick={() => handleFieldChange(field, suggestion)}
-            className="text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
+            className="mt-3 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
           >
             💡 Suggested: {typeof suggestion === 'number' ? suggestion.toLocaleString() : suggestion}
           </button>
@@ -513,24 +511,24 @@ export default function EnhancedDynamicInputForm({
     const label = String(field).replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase());
 
     return (
-      <div key={field} className="flex flex-col w-full space-y-2">
+      <div key={field} className="group relative">
         <EnhancedInput
-            headerText={label}
-            value={String(value || '')}
-            onValueChange={createSafeOnChangeHandler(field)}
-            {...(error ? { error } : {})}
-            required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
-            success={Boolean(value) && !error}
-            autoDetectType={true}
-            showTypeIndicator={true}
-            {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
-          />
+          headerText={label}
+          value={String(value || '')}
+          onValueChange={createSafeOnChangeHandler(field)}
+          {...(error ? { error } : {})}
+          required={requiredFields.some(rf => typeof rf === 'object' ? rf.field === field : rf === field)}
+          success={Boolean(value) && !error}
+          autoDetectType={true}
+          showTypeIndicator={true}
+          {...(suggestion && !value ? { rightIcon: HelpCircle } : {})}
+        />
         
         {suggestion && !value && (
           <button
             type="button"
             onClick={() => handleFieldChange(field, suggestion)}
-            className="text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
+            className="mt-3 text-sm text-primary-600 hover:text-primary-700 transition-colors flex items-center gap-1 bg-primary-50 hover:bg-primary-100 px-3 py-2 rounded-md"
           >
             💡 Suggested: {typeof suggestion === 'number' ? suggestion.toLocaleString() : suggestion}
           </button>
@@ -633,15 +631,9 @@ export default function EnhancedDynamicInputForm({
                            (packageType?.split('-')[0]?.slice(1) || '') || 'Property';
 
   return (
-    <ErrorBoundary fallback={
-      <div className="p-8 text-center">
-        <h3 className="text-lg font-semibold text-red-600 mb-2">Form Error</h3>
-        <p className="text-gray-600">There was an error loading the form. Please refresh the page.</p>
-      </div>
-    }>
-      <form className="w-full max-w-4xl mx-auto">
-        {/* Progress indicator - improved spacing and positioning */}
-        <div className="mb-6 bg-white border border-gray-200 rounded-lg p-4 shadow-sm relative z-10">
+    <form className="w-full">
+      {/* Progress indicator - fixed positioning to prevent overlap */}
+      <div className="mb-8 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
         <div className="flex items-center justify-between mb-3">
           <span className="text-sm font-medium text-gray-700">
             Form Completion
@@ -689,9 +681,9 @@ export default function EnhancedDynamicInputForm({
           const isExpanded = expandedSections[group.id];
 
           return (
-            <Card key={group.id} variant="bordered" className="transition-all duration-200 ease-in-out shadow-sm hover:shadow-md relative z-0">
+            <Card key={group.id} variant="bordered" className="transition-all duration-200 ease-in-out shadow-sm hover:shadow-md">
               <CardHeader 
-                className="cursor-pointer select-none hover:bg-gray-50 transition-colors relative z-10"
+                className="cursor-pointer select-none hover:bg-gray-50 transition-colors"
                 onClick={() => toggleSection(group.id)}
               >
                 <div className="flex items-center justify-between">
@@ -735,10 +727,10 @@ export default function EnhancedDynamicInputForm({
                 isExpanded ? "max-h-none opacity-100" : "max-h-0 opacity-0"
               )}>
                 {isExpanded && (
-                  <CardBody className="pt-6 pb-8 relative z-0">
-                    <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2 xl:grid-cols-2">
+                  <CardBody className="pt-4 pb-8">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                       {group.fields.map((fieldName) => (
-                        <div key={fieldName} className="w-full relative">
+                        <div key={fieldName} className="space-y-2">
                           {renderField(fieldName)}
                         </div>
                       ))}
@@ -789,6 +781,5 @@ export default function EnhancedDynamicInputForm({
         </div>
       </div>
     </form>
-    </ErrorBoundary>
   );
 }

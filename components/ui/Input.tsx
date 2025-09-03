@@ -44,10 +44,9 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   suffix,
   floating = false,
   formatAs,
-  // Note: currencySymbol and decimals kept for compatibility but unused
-  // currencySymbol = '$',
+  currencySymbol, // destructure to filter out
   allowNegative = false,
-  // decimals = 2,
+  decimals, // destructure to filter out
   className,
   disabled,
   required,
@@ -57,7 +56,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
   onBlur,
   placeholder,
   type = 'text',
-  ...props
+  ...htmlInputProps // renamed to make it clear these are HTML props only
 }, ref) => {
   const [isFocused, setIsFocused] = useState(false);
   const [internalValue, setInternalValue] = useState(value || '');
@@ -355,10 +354,10 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
             className={inputClasses}
             aria-invalid={!!error}
             aria-describedby={
-              error ? `${props.id}-error` : 
-              helpText ? `${props.id}-helper` : undefined
+              error ? `${htmlInputProps.id}-error` : 
+              helpText ? `${htmlInputProps.id}-helper` : undefined
             }
-            {...props}
+            {...htmlInputProps}
           />
 
           {/* Success Icon */}
@@ -395,7 +394,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
 
       {/* Helper Text */}
       {helpText && !error && (
-        <p id={`${props.id}-helper`} className="mt-2 text-sm text-gray-500">
+        <p id={`${htmlInputProps.id}-helper`} className="mt-2 text-sm text-gray-500">
           {helpText}
         </p>
       )}
@@ -404,7 +403,7 @@ const Input = forwardRef<HTMLInputElement, InputProps>(({
       {error && (
         <div className="mt-2 flex items-center">
           <AlertCircle size={16} className="text-red-500 mr-1 flex-shrink-0" />
-          <p id={`${props.id}-error`} className="text-sm text-red-600">
+          <p id={`${htmlInputProps.id}-error`} className="text-sm text-red-600">
             {error}
           </p>
         </div>

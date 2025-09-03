@@ -34,8 +34,8 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
             options: ['AAA', 'AA', 'A', 'BBB', 'BB', 'B', 'CCC', 'D', 'NR'],
             required: true
           },
-          FieldDefinitionFactory.currency('rentableSquareFeet', 'Rentable Square Feet'),
-          FieldDefinitionFactory.currency('baseRentPSF', 'Base Rent PSF'),
+          { field: 'rentableSquareFeet', type: 'number', label: 'Rentable Square Feet', required: true },
+          { field: 'baseRentPSF', type: 'number', label: 'Base Rent Per SqFt', required: true },
           { field: 'leaseStartDate', type: 'date', label: 'Lease Start Date', required: true },
           { field: 'leaseExpirationDate', type: 'date', label: 'Lease Expiration Date', required: true },
           { field: 'renewalOptions', type: 'string', label: 'Renewal Options' },
@@ -114,7 +114,7 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
           FieldDefinitionFactory.currency('annualRevenue', 'Annual Revenue'),
           { field: 'yearsInBusiness', type: 'number', label: 'Years in Business' },
           { field: 'rentableSquareFeet', type: 'number', label: 'Rentable Square Feet' },
-          FieldDefinitionFactory.currency('baseRentPSF', 'Base Rent PSF'),
+          { field: 'baseRentPSF', type: 'number', label: 'Base Rent Per SqFt', required: true },
           { field: 'parentCompany', type: 'string', label: 'Parent Company' }
         ]
       }
@@ -160,8 +160,8 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
           { field: 'tenantName', type: 'string', label: 'Tenant Name', required: true },
           { field: 'leaseExpirationDate', type: 'date', label: 'Lease Expiration Date', required: true },
           { field: 'rentableSquareFeet', type: 'number', label: 'Rentable Square Feet', required: true },
-          FieldDefinitionFactory.currency('baseRentPSF', 'Current Base Rent PSF'),
-          FieldDefinitionFactory.currency('marketRentPSF', 'Market Rent PSF'),
+          { field: 'baseRentPSF', type: 'number', label: 'Current Base Rent Per SqFt', required: true },
+          { field: 'marketRentPSF', type: 'number', label: 'Market Rent Per SqFt', required: true },
           FieldDefinitionFactory.percentage('renewalProbability', 'Renewal Probability'),
           FieldDefinitionFactory.currency('tenantImprovements', 'Tenant Improvements'),
           FieldDefinitionFactory.currency('leasingCommissions', 'Leasing Commissions')
@@ -304,7 +304,7 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
         validation: { min: 1 },
         subFields: [
           { field: 'tenantName', type: 'string', label: 'Tenant Name', required: true },
-          FieldDefinitionFactory.currency('startRent', 'Starting Rent PSF'),
+          { field: 'startRent', type: 'number', label: 'Starting Rent Per SqFt', required: true },
           {
             field: 'escalationType',
             type: 'select',
@@ -314,7 +314,7 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
           FieldDefinitionFactory.percentage('escalationRate', 'Escalation Rate'),
           { field: 'leaseTerm', type: 'number', label: 'Lease Term (years)' },
           { field: 'freeRentMonths', type: 'number', label: 'Free Rent Months' },
-          FieldDefinitionFactory.currency('tiAllowancePSF', 'TI Allowance PSF'),
+          { field: 'tiAllowancePSF', type: 'number', label: 'TI Allowance Per SqFt', required: true },
           FieldDefinitionFactory.currency('leasingCommission', 'Leasing Commission'),
           FieldDefinitionFactory.percentage('renewalProbability', 'Renewal Probability')
         ]
@@ -330,7 +330,7 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
         validation: { min: 1, max: 36 },
         defaultValue: 6
       },
-      FieldDefinitionFactory.currency('marketTIAllowance', 'Market TI Allowance PSF')
+      { field: 'marketTIAllowance', type: 'number', label: 'Market TI Allowance Per SqFt', required: true }
     ],
     
     templates: ['leaseEconomics', 'npvAnalysis', 'leasingStrategy'],
@@ -446,10 +446,10 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
         label: 'Lease Terms',
         validation: { min: 1 },
         subFields: [
-          FieldDefinitionFactory.currency('baseRent', 'Base Rent PSF'),
+          { field: 'baseRent', type: 'number', label: 'Base Rent Per SqFt', required: true },
           { field: 'escalations', type: 'string', label: 'Escalation Schedule' },
           { field: 'freeRent', type: 'number', label: 'Free Rent (months)' },
-          FieldDefinitionFactory.currency('tiAllowance', 'TI Allowance PSF'),
+          { field: 'tiAllowance', type: 'number', label: 'TI Allowance Per SqFt', required: true },
           FieldDefinitionFactory.currency('leasingCommissions', 'Leasing Commissions'),
           {
             field: 'expenseStructure',
@@ -586,7 +586,7 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
         subFields: [
           { field: 'totalSF', type: 'number', label: 'Total Square Feet' },
           FieldDefinitionFactory.percentage('occupancy', 'Current Occupancy'),
-          FieldDefinitionFactory.currency('avgRent', 'Average Rent PSF'),
+          { field: 'avgRent', type: 'number', label: 'Average Rent Per SqFt', required: true },
           {
             field: 'class',
             type: 'select',
@@ -612,7 +612,7 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
             options: ['Class A', 'Class B', 'Class C']
           },
           FieldDefinitionFactory.percentage('occupancy', 'Occupancy'),
-          FieldDefinitionFactory.currency('askingRent', 'Asking Rent PSF'),
+          { field: 'askingRent', type: 'number', label: 'Asking Rent Per SqFt', required: true },
           { field: 'amenities', type: 'string', label: 'Key Amenities' }
         ]
       },
@@ -624,7 +624,7 @@ export const enhancedOfficePackages: EnhancedCalculationPackage[] = [
           FieldDefinitionFactory.percentage('vacancy', 'Vacancy Rate'),
           { field: 'absorption', type: 'number', label: 'Net Absorption (SF)' },
           { field: 'construction', type: 'number', label: 'Under Construction (SF)' },
-          FieldDefinitionFactory.currency('avgRent', 'Average Rent PSF')
+          { field: 'avgRent', type: 'number', label: 'Average Rent Per SqFt', required: true }
         ]
       }
     ],
